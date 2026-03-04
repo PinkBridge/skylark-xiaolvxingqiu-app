@@ -1,0 +1,1 @@
+{"version":3,"file":"version.js","sources":["../../../devSoft/HBuilderX.4.56.2025031210/HBuilderX/plugins/uniapp-cli-vite/uniPage:/cGFnZXMvbWltZS92ZXJzaW9uLnZ1ZQ"],"sourcesContent":["import MiniProgramPage from 'D:/code/skylark/xiaolvxingqiu-app/pages/mime/version.vue'\nwx.createPage(MiniProgramPage)"],"names":[],"mappings":";;;;;;;;;;;;;;;;;;;;;;;;;;;;;AACA,GAAG,WAAW,eAAe;"}

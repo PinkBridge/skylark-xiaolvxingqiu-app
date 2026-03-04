@@ -1,0 +1,268 @@
+/**
+ * 这里是uni-app内置的常用样式变量
+ *
+ * uni-app 官方扩展插件及插件市场（https://ext.dcloud.net.cn）上很多三方插件均使用了这些样式变量
+ * 如果你是插件开发者，建议你使用scss预处理，并在插件代码中直接使用这些变量（无需 import 这个文件），方便用户通过搭积木的方式开发整体风格一致的App
+ *
+ */
+/**
+ * 如果你是App开发者（插件使用者），你可以通过修改这些变量来定制自己的插件主题，实现自定义主题功能
+ *
+ * 如果你的项目同样使用了scss预处理，你也可以直接在你的 scss 代码中使用如下变量，同时无需 import 这个文件
+ */
+/* 颜色变量 */
+/* 行为相关颜色 */
+/* 文字基本颜色 */
+/* 背景颜色 */
+/* 边框颜色 */
+/* 尺寸变量 */
+/* 文字尺寸 */
+/* 图片尺寸 */
+/* Border Radius */
+/* 水平间距 */
+/* 垂直间距 */
+/* 透明度 */
+/* 文章场景相关 */
+.calendar-page.data-v-6e8913ab {
+  min-height: 100vh;
+  padding: 20rpx 24rpx 24rpx;
+  background: #f6fcf8;
+}
+.calendar-head.data-v-6e8913ab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18rpx;
+}
+.month-switch.data-v-6e8913ab {
+  width: 46rpx;
+  height: 46rpx;
+  border-radius: 999rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eefbf3;
+}
+.month-title.data-v-6e8913ab {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #1f7a44;
+}
+.week-row.data-v-6e8913ab {
+  margin-top: 14rpx;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+.week-item.data-v-6e8913ab {
+  text-align: center;
+  font-size: 22rpx;
+  color: #7a8a82;
+}
+.day-grid.data-v-6e8913ab {
+  margin-top: 8rpx;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8rpx;
+}
+.day-cell.data-v-6e8913ab {
+  position: relative;
+  height: 72rpx;
+  border-radius: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8fbf9;
+}
+.day-cell.is-current .day-num.data-v-6e8913ab {
+  color: #294f38;
+}
+.day-cell.is-selected.data-v-6e8913ab {
+  background: #e9f8ef;
+  border: 1px solid #c7e9d5;
+}
+.day-cell.is-today .day-num.data-v-6e8913ab {
+  font-weight: 700;
+  color: #33c26d;
+}
+.day-num.data-v-6e8913ab {
+  font-size: 24rpx;
+  color: #b3c0b9;
+}
+.day-dot.data-v-6e8913ab {
+  position: absolute;
+  bottom: 8rpx;
+  left: 50%;
+  width: 8rpx;
+  height: 8rpx;
+  border-radius: 50%;
+  background: #33c26d;
+  transform: translateX(-50%);
+}
+.day-dot.is-overdue-dot.data-v-6e8913ab {
+  color: #f56c6c;
+  background: #f56c6c;
+}
+.section-wrap.data-v-6e8913ab {
+  margin-top: 20rpx;
+}
+.section-head.data-v-6e8913ab {
+  margin-bottom: 10rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.section-title.data-v-6e8913ab {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #294f38;
+}
+.section-count.data-v-6e8913ab {
+  font-size: 24rpx;
+  color: #7a8a82;
+}
+.activity-list.data-v-6e8913ab {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+}
+.activity-item.data-v-6e8913ab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 96rpx;
+  padding: 16rpx 14rpx;
+  border-radius: 16rpx;
+  background: #ffffff;
+  border-bottom: 1px solid #e3f2e9;
+}
+.activity-item.is-clickable.data-v-6e8913ab {
+  cursor: pointer;
+}
+.activity-list .activity-item.data-v-6e8913ab:last-child {
+  border-bottom: none;
+}
+.activity-item.is-completed.data-v-6e8913ab {
+  opacity: 0.72;
+}
+.activity-left.data-v-6e8913ab {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  min-width: 0;
+}
+.activity-icon-box.data-v-6e8913ab {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eaf9f0;
+}
+.activity-content.data-v-6e8913ab {
+  min-width: 0;
+}
+.activity-main.data-v-6e8913ab {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+.activity-name.data-v-6e8913ab {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #1f1f1f;
+}
+.activity-plant.data-v-6e8913ab {
+  font-size: 24rpx;
+  color: #1f1f1f;
+}
+.activity-time.data-v-6e8913ab {
+  display: block;
+  margin-top: 4rpx;
+  font-size: 24rpx;
+  color: #7a8a82;
+}
+.activity-status.data-v-6e8913ab {
+  flex-shrink: 0;
+  font-size: 20rpx;
+  padding: 4rpx 10rpx;
+  border-radius: 999rpx;
+}
+.status-pending.data-v-6e8913ab {
+  color: #f56c6c;
+  background: #ffecec;
+}
+.status-done.data-v-6e8913ab {
+  color: #7f8f87;
+  background: #eef3f0;
+}
+.empty-text.data-v-6e8913ab {
+  font-size: 24rpx;
+  color: #8ea096;
+  text-align: center;
+  padding: 20rpx 0;
+}
+.record-popup.data-v-6e8913ab {
+  padding: 26rpx 24rpx 30rpx;
+  background: #f8fdf9;
+}
+.record-popup-head.data-v-6e8913ab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14rpx;
+}
+.record-popup-title.data-v-6e8913ab {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #294f38;
+}
+.record-row-list.data-v-6e8913ab {
+  background: #ffffff;
+  border-radius: 16rpx;
+  padding: 8rpx 16rpx;
+}
+.record-row.data-v-6e8913ab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20rpx;
+  padding: 14rpx 0;
+  border-bottom: 1px solid #e8f2ec;
+}
+.record-row.data-v-6e8913ab:last-child {
+  border-bottom: none;
+}
+.record-label.data-v-6e8913ab {
+  font-size: 24rpx;
+  color: #6f8278;
+  flex-shrink: 0;
+}
+.record-value.data-v-6e8913ab {
+  font-size: 24rpx;
+  color: #1f1f1f;
+  text-align: right;
+  word-break: break-all;
+}
+.record-photo-wrap.data-v-6e8913ab,
+.record-note-wrap.data-v-6e8913ab {
+  margin-top: 14rpx;
+  background: #ffffff;
+  border-radius: 16rpx;
+  padding: 16rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+}
+.record-photo.data-v-6e8913ab {
+  width: 180rpx;
+  height: 180rpx;
+  border-radius: 12rpx;
+  background: #edf6f0;
+}
+.record-note.data-v-6e8913ab {
+  font-size: 24rpx;
+  line-height: 1.6;
+  color: #3a4c42;
+  white-space: pre-wrap;
+}

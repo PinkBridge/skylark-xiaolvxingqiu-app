@@ -1,0 +1,11 @@
+{
+  "navigationBarTitleText": "绿植详情",
+  "usingComponents": {
+    "up-icon": "../../uni_modules/uview-plus/components/u-icon/u-icon",
+    "up-card": "../../uni_modules/uview-plus/components/u-card/u-card",
+    "up-subsection": "../../uni_modules/uview-plus/components/u-subsection/u-subsection",
+    "up-album": "../../uni_modules/uview-plus/components/u-album/u-album",
+    "up-switch": "../../uni_modules/uview-plus/components/u-switch/u-switch",
+    "up-input": "../../uni_modules/uview-plus/components/u-input/u-input"
+  }
+}

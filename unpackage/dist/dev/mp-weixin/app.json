@@ -1,0 +1,58 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/care/care",
+    "pages/calendar/calendar",
+    "pages/mime/mime",
+    "pages/plant/plant",
+    "pages/plant/add",
+    "pages/plant/detail",
+    "pages/index/garden-edit",
+    "pages/index/garden-create",
+    "pages/mime/push-setting",
+    "pages/mime/coin",
+    "pages/mime/profile",
+    "pages/mime/about",
+    "pages/mime/version",
+    "pages/mime/feedback"
+  ],
+  "window": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "uni-app",
+    "navigationBarBackgroundColor": "#F8F8F8",
+    "backgroundColor": "#F8F8F8"
+  },
+  "tabBar": {
+    "color": "#8a8a8a",
+    "selectedColor": "#33c26d",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "iconPath": "/static/icon/flower.png",
+        "selectedIconPath": "/static/icon/flower-selected.png",
+        "text": "绿星球"
+      },
+      {
+        "pagePath": "pages/care/care",
+        "iconPath": "/static/icon/heartbeat.png",
+        "selectedIconPath": "/static/icon/heartbeat-selected.png",
+        "text": "养护"
+      },
+      {
+        "pagePath": "pages/calendar/calendar",
+        "iconPath": "/static/image/441-Calendar.png",
+        "selectedIconPath": "/static/image/48-Calendar-selected.png",
+        "text": "日历"
+      },
+      {
+        "pagePath": "pages/mime/mime",
+        "iconPath": "/static/icon/mime.png",
+        "selectedIconPath": "/static/icon/mime-selected.png",
+        "text": "我的"
+      }
+    ]
+  },
+  "usingComponents": {}
+}

@@ -1,0 +1,13 @@
+{
+  "navigationBarTitleText": "编辑花园",
+  "usingComponents": {
+    "up-icon": "../../uni_modules/uview-plus/components/u-icon/u-icon",
+    "up-form-item": "../../uni_modules/uview-plus/components/u-form-item/u-form-item",
+    "up-input": "../../uni_modules/uview-plus/components/u-input/u-input",
+    "up-textarea": "../../uni_modules/uview-plus/components/u-textarea/u-textarea",
+    "up-form": "../../uni_modules/uview-plus/components/u-form/u-form",
+    "up-button": "../../uni_modules/uview-plus/components/u-button/u-button",
+    "up-action-sheet": "../../uni_modules/uview-plus/components/u-action-sheet/u-action-sheet",
+    "up-datetime-picker": "../../uni_modules/uview-plus/components/u-datetime-picker/u-datetime-picker"
+  }
+}

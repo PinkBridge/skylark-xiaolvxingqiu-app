@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "养护日历",
+  "usingComponents": {
+    "up-icon": "../../uni_modules/uview-plus/components/u-icon/u-icon",
+    "up-card": "../../uni_modules/uview-plus/components/u-card/u-card",
+    "up-popup": "../../uni_modules/uview-plus/components/u-popup/u-popup"
+  }
+}

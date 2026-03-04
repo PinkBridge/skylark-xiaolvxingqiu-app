@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "绿植",
+  "usingComponents": {
+    "up-icon": "../../uni_modules/uview-plus/components/u-icon/u-icon",
+    "up-subsection": "../../uni_modules/uview-plus/components/u-subsection/u-subsection",
+    "up-waterfall": "../../uni_modules/uview-plus/components/u-waterfall/u-waterfall"
+  }
+}

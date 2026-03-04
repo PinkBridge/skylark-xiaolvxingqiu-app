@@ -1,0 +1,135 @@
+{
+	"pages": [
+		{
+			"path": "pages/index/index",
+			"style": {
+				"navigationBarTitleText": "星球空间"
+			}
+		},
+		{
+			"path": "pages/care/care",
+			"style": {
+				"navigationBarTitleText": "养护管理"
+			}
+		},
+		{
+			"path": "pages/calendar/calendar",
+			"style": {
+				"navigationBarTitleText": "养护日历"
+			}
+		},
+		{
+			"path": "pages/mime/mime",
+			"style": {
+				"navigationBarTitleText": "我的"
+			}
+		},
+		{
+			"path": "pages/plant/plant",
+			"style": {
+				"navigationBarTitleText": "绿植"
+			}
+		},
+		{
+			"path": "pages/plant/add",
+			"style": {
+				"navigationBarTitleText": "添加绿植"
+			}
+		},
+		{
+			"path": "pages/plant/detail",
+			"style": {
+				"navigationBarTitleText": "绿植详情"
+			}
+		},
+		{
+			"path": "pages/index/garden-edit",
+			"style": {
+				"navigationBarTitleText": "编辑花园"
+			}
+		},
+		{
+			"path": "pages/index/garden-create",
+			"style": {
+				"navigationBarTitleText": "创建花园"
+			}
+		},
+		{
+			"path": "pages/mime/push-setting",
+			"style": {
+				"navigationBarTitleText": "推送设置"
+			}
+		},
+		{
+			"path": "pages/mime/coin",
+			"style": {
+				"navigationBarTitleText": "我的星币"
+			}
+		},
+		{
+			"path": "pages/mime/profile",
+			"style": {
+				"navigationBarTitleText": "我的信息"
+			}
+		},
+		{
+			"path": "pages/mime/about",
+			"style": {
+				"navigationBarTitleText": "关于我们"
+			}
+		},
+		{
+			"path": "pages/mime/version",
+			"style": {
+				"navigationBarTitleText": "软件版本"
+			}
+		},
+		{
+			"path": "pages/mime/feedback",
+			"style": {
+				"navigationBarTitleText": "反馈和建议"
+			}
+		}
+	],
+	"easycom" : {
+	    "custom" : {
+	        "^u--(.*)" : "@/uni_modules/uview-plus/components/u-$1/u-$1.vue",
+	        "^up-(.*)" : "@/uni_modules/uview-plus/components/u-$1/u-$1.vue",
+	        "^u-([^-].*)" : "@/uni_modules/uview-plus/components/u-$1/u-$1.vue"
+	    }
+	},
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "uni-app",
+		"navigationBarBackgroundColor": "#F8F8F8",
+		"backgroundColor": "#F8F8F8"
+	},
+	"uniIdRouter": {},
+	"tabBar": {
+		"color": "#8a8a8a",
+		"selectedColor": "#33c26d",
+		"backgroundColor": "#ffffff",
+		"borderStyle": "black",
+		"list": [{
+			"pagePath": "pages/index/index",
+			"iconPath": "/static/icon/flower.png",
+			"selectedIconPath": "/static/icon/flower-selected.png",
+			"text": "绿星球"
+		},{
+			"pagePath": "pages/care/care",
+			"iconPath": "/static/icon/heartbeat.png",
+			"selectedIconPath": "/static/icon/heartbeat-selected.png",
+			"text": "养护"
+		},{
+			"pagePath": "pages/calendar/calendar",
+			"iconPath": "/static/image/441-Calendar.png",
+			"selectedIconPath": "/static/image/48-Calendar-selected.png",
+			"text": "日历"
+		},{
+			"pagePath": "pages/mime/mime",
+			"iconPath": "/static/icon/mime.png",
+			"selectedIconPath": "/static/icon/mime-selected.png",
+			"text": "我的"
+		}]
+	}
+}

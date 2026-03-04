@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "反馈和建议",
+  "usingComponents": {
+    "up-textarea": "../../uni_modules/uview-plus/components/u-textarea/u-textarea",
+    "up-form-item": "../../uni_modules/uview-plus/components/u-form-item/u-form-item",
+    "up-input": "../../uni_modules/uview-plus/components/u-input/u-input",
+    "up-form": "../../uni_modules/uview-plus/components/u-form/u-form",
+    "up-button": "../../uni_modules/uview-plus/components/u-button/u-button"
+  }
+}

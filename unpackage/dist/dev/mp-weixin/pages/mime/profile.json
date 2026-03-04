@@ -1,0 +1,13 @@
+{
+  "navigationBarTitleText": "我的信息",
+  "usingComponents": {
+    "up-icon": "../../uni_modules/uview-plus/components/u-icon/u-icon",
+    "up-form-item": "../../uni_modules/uview-plus/components/u-form-item/u-form-item",
+    "up-input": "../../uni_modules/uview-plus/components/u-input/u-input",
+    "up-subsection": "../../uni_modules/uview-plus/components/u-subsection/u-subsection",
+    "up-textarea": "../../uni_modules/uview-plus/components/u-textarea/u-textarea",
+    "up-form": "../../uni_modules/uview-plus/components/u-form/u-form",
+    "up-button": "../../uni_modules/uview-plus/components/u-button/u-button",
+    "up-datetime-picker": "../../uni_modules/uview-plus/components/u-datetime-picker/u-datetime-picker"
+  }
+}
