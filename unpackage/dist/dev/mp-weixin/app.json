@@ -29,7 +29,7 @@
     "borderStyle": "black",
     "list": [
       {
-        "pagePath": "pages/index/index",
+        "pagePath": "pages/plant/plant",
         "iconPath": "/static/icon/flower.png",
         "selectedIconPath": "/static/icon/flower-selected.png",
         "text": "绿星球"

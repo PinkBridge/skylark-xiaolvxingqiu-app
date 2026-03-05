@@ -1,5 +1,6 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
+const api_index = require("../../api/index.js");
 if (!Array) {
   const _easycom_up_textarea2 = common_vendor.resolveComponent("up-textarea");
   const _easycom_up_form_item2 = common_vendor.resolveComponent("up-form-item");
@@ -31,12 +32,22 @@ const _sfc_main = {
         });
         return;
       }
-      common_vendor.index.showToast({
-        title: "感谢反馈，我们会持续优化",
-        icon: "success"
+      api_index.submitFeedbackApi({
+        content: form.content.trim(),
+        contact: form.contact.trim()
+      }).then(() => {
+        common_vendor.index.showToast({
+          title: "感谢反馈，我们会持续优化",
+          icon: "success"
+        });
+        form.content = "";
+        form.contact = "";
+      }).catch((err) => {
+        common_vendor.index.showToast({
+          title: (err == null ? void 0 : err.message) || "提交失败",
+          icon: "none"
+        });
       });
-      form.content = "";
-      form.contact = "";
     };
     return (_ctx, _cache) => {
       return {

@@ -1,5 +1,6 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
+const api_index = require("../../api/index.js");
 if (!Array) {
   const _easycom_up_icon2 = common_vendor.resolveComponent("up-icon");
   const _easycom_up_form_item2 = common_vendor.resolveComponent("up-form-item");
@@ -22,7 +23,6 @@ const _easycom_up_datetime_picker = () => "../../uni_modules/uview-plus/componen
 if (!Math) {
   (_easycom_up_icon + _easycom_up_form_item + _easycom_up_input + _easycom_up_textarea + _easycom_up_form + _easycom_up_button + _easycom_up_action_sheet + _easycom_up_datetime_picker)();
 }
-const gardenStorageKey = "gardenInfo";
 const _sfc_main = {
   __name: "garden-edit",
   setup(__props) {
@@ -52,14 +52,13 @@ const _sfc_main = {
       form.description = payload.description || "";
     };
     const loadGardenInfo = () => {
-      const saved = common_vendor.index.getStorageSync(gardenStorageKey);
-      if (!saved || typeof saved !== "object") {
+      api_index.getGardenInfo().then((data) => {
+        applyForm({
+          ...defaultGardenInfo,
+          ...data || {}
+        });
+      }).catch(() => {
         applyForm(defaultGardenInfo);
-        return;
-      }
-      applyForm({
-        ...defaultGardenInfo,
-        ...saved
       });
     };
     loadGardenInfo();
@@ -113,20 +112,26 @@ const _sfc_main = {
         });
         return;
       }
-      common_vendor.index.setStorageSync(gardenStorageKey, {
+      api_index.updateGardenInfo({
         title: form.title.trim(),
         subTitle: form.subTitle,
         thumb: form.thumb,
         image: form.image,
         description: form.description.trim()
+      }).then(() => {
+        common_vendor.index.showToast({
+          title: "保存成功",
+          icon: "success"
+        });
+        setTimeout(() => {
+          common_vendor.index.navigateBack();
+        }, 400);
+      }).catch((err) => {
+        common_vendor.index.showToast({
+          title: (err == null ? void 0 : err.message) || "保存失败",
+          icon: "none"
+        });
       });
-      common_vendor.index.showToast({
-        title: "保存成功",
-        icon: "success"
-      });
-      setTimeout(() => {
-        common_vendor.index.navigateBack();
-      }, 400);
     };
     return (_ctx, _cache) => {
       return common_vendor.e({

@@ -127,9 +127,12 @@
 
 <script setup>
 import { reactive, ref } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
+import { createPlant, getPlantById, updatePlant as updatePlantApi } from '@/api'
 
 const cultivationOptions = ['土培', '水培']
 const cultivationIndex = ref(0)
+const editPlantId = ref('')
 
 const plantForm = reactive({
 	image: '',
@@ -197,16 +200,56 @@ const onSubmitPlant = () => {
 		})
 		return
 	}
-	uni.showToast({
-		title: '绿植信息已保存',
-		icon: 'success'
-	})
-	setTimeout(() => {
-		uni.redirectTo({
-			url: '/pages/plant/plant'
+	const payload = {
+		image: plantForm.image,
+		name: plantForm.name,
+		species: plantForm.species,
+		cultivationType: plantForm.cultivationType,
+		plantingDate: plantForm.plantingDate,
+		note: plantForm.note
+	}
+	const req = editPlantId.value ? updatePlantApi(editPlantId.value, payload) : createPlant(payload)
+	req
+		.then(() => {
+			uni.showToast({
+				title: '绿植信息已保存',
+				icon: 'success'
+			})
+			setTimeout(() => {
+				uni.redirectTo({
+					url: '/pages/plant/plant'
+				})
+			}, 500)
 		})
-	}, 500)
+		.catch((err) => {
+			uni.showToast({
+				title: err?.message || '保存失败',
+				icon: 'none'
+			})
+		})
 }
+
+onLoad((query) => {
+	const id = query?.id
+	if (!id) return
+	editPlantId.value = id
+	getPlantById(id)
+		.then((data) => {
+			plantForm.image = data?.image || ''
+			plantForm.name = data?.name || ''
+			plantForm.species = data?.species || ''
+			plantForm.cultivationType = data?.cultivationType || 'soil'
+			plantForm.plantingDate = data?.plantingDate || ''
+			plantForm.note = data?.note || ''
+			cultivationIndex.value = plantForm.cultivationType === 'water' ? 1 : 0
+		})
+		.catch((err) => {
+			uni.showToast({
+				title: err?.message || '加载绿植失败',
+				icon: 'none'
+			})
+		})
+})
 </script>
 
 <style scoped lang="scss">

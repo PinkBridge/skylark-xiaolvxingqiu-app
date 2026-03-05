@@ -1,5 +1,6 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
+const api_index = require("../../api/index.js");
 if (!Array) {
   const _easycom_up_icon2 = common_vendor.resolveComponent("up-icon");
   const _easycom_up_form_item2 = common_vendor.resolveComponent("up-form-item");
@@ -29,6 +30,7 @@ const _sfc_main = {
   setup(__props) {
     const cultivationOptions = ["土培", "水培"];
     const cultivationIndex = common_vendor.ref(0);
+    const editPlantId = common_vendor.ref("");
     const plantForm = common_vendor.reactive({
       image: "",
       name: "",
@@ -87,16 +89,52 @@ const _sfc_main = {
         });
         return;
       }
-      common_vendor.index.showToast({
-        title: "绿植信息已保存",
-        icon: "success"
-      });
-      setTimeout(() => {
-        common_vendor.index.redirectTo({
-          url: "/pages/plant/plant"
+      const payload = {
+        image: plantForm.image,
+        name: plantForm.name,
+        species: plantForm.species,
+        cultivationType: plantForm.cultivationType,
+        plantingDate: plantForm.plantingDate,
+        note: plantForm.note
+      };
+      const req = editPlantId.value ? api_index.updatePlant(editPlantId.value, payload) : api_index.createPlant(payload);
+      req.then(() => {
+        common_vendor.index.showToast({
+          title: "绿植信息已保存",
+          icon: "success"
         });
-      }, 500);
+        setTimeout(() => {
+          common_vendor.index.redirectTo({
+            url: "/pages/plant/plant"
+          });
+        }, 500);
+      }).catch((err) => {
+        common_vendor.index.showToast({
+          title: (err == null ? void 0 : err.message) || "保存失败",
+          icon: "none"
+        });
+      });
     };
+    common_vendor.onLoad((query) => {
+      const id = query == null ? void 0 : query.id;
+      if (!id)
+        return;
+      editPlantId.value = id;
+      api_index.getPlantById(id).then((data) => {
+        plantForm.image = (data == null ? void 0 : data.image) || "";
+        plantForm.name = (data == null ? void 0 : data.name) || "";
+        plantForm.species = (data == null ? void 0 : data.species) || "";
+        plantForm.cultivationType = (data == null ? void 0 : data.cultivationType) || "soil";
+        plantForm.plantingDate = (data == null ? void 0 : data.plantingDate) || "";
+        plantForm.note = (data == null ? void 0 : data.note) || "";
+        cultivationIndex.value = plantForm.cultivationType === "water" ? 1 : 0;
+      }).catch((err) => {
+        common_vendor.index.showToast({
+          title: (err == null ? void 0 : err.message) || "加载绿植失败",
+          icon: "none"
+        });
+      });
+    });
     return (_ctx, _cache) => {
       return common_vendor.e({
         a: plantForm.image

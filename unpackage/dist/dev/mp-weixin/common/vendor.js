@@ -7119,7 +7119,7 @@ function isConsoleWritable() {
 function initRuntimeSocketService() {
   const hosts = "192.168.10.8,127.0.0.1";
   const port = "8090";
-  const id = "mp-weixin_UpKvJc";
+  const id = "mp-weixin_0HZMdp";
   const lazy = typeof swan !== "undefined";
   let restoreError = lazy ? () => {
   } : initOnError();
@@ -8078,6 +8078,11 @@ const onLoad = /* @__PURE__ */ createLifeCycleHook(
   2
   /* HookFlags.PAGE */
 );
+const onUnload = /* @__PURE__ */ createLifeCycleHook(
+  ON_UNLOAD,
+  2
+  /* HookFlags.PAGE */
+);
 exports._export_sfc = _export_sfc;
 exports.computed = computed;
 exports.createSSRApp = createSSRApp;
@@ -8089,6 +8094,7 @@ exports.nextTick$1 = nextTick$1;
 exports.o = o;
 exports.onLoad = onLoad;
 exports.onShow = onShow;
+exports.onUnload = onUnload;
 exports.p = p;
 exports.r = r;
 exports.reactive = reactive;

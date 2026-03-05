@@ -1,46 +1,54 @@
 <template>
 	<view class="index-page">
-		<up-card
-			:showHead="false"
-			:showFoot="false"
-			:border="false"
-			margin="0"
-			@click="onCardClick"
-		>
-			<template #body>
-				<view class="card-head">
-					<view class="card-head-left">
-						<image class="card-thumb" :src="cardData.thumb" mode="aspectFill"></image>
-						<text class="card-title">{{ cardData.title }}</text>
-						<view class="action-btn" @tap.stop="onEditGardenInfo">
-							<up-icon name="edit-pen" size="16" color="#33c26d"></up-icon>
-							<text>编辑</text>
-						</view>
-					</view>
-					<text class="card-sub-title">{{ cardData.subTitle }}</text>
-				</view>
-
-				<image class="cover" :src="cardData.image" mode="aspectFill"></image>
-				<view class="card-desc">{{ cardData.description }}</view>
-
-				<view class="foot-divider">
-					<view class="foot-stats">
-						<view
-							v-for="item in footerStats"
-							:key="item.key"
-							class="foot-item"
-							@tap.stop="onFooterAction(item)"
-						>
-							<view class="foot-item-main">
-								<up-icon :name="item.icon" size="16" :color="item.color"></up-icon>
-								<text>{{ item.label }}</text>
+		<view v-if="gardenCards.length" class="garden-list">
+			<up-card
+				v-for="garden in gardenCards"
+				:key="garden.id"
+				:showHead="false"
+				:showFoot="false"
+				:border="false"
+				margin="0"
+				@click="onCardClick"
+			>
+				<template #body>
+					<view class="card-head">
+						<view class="card-head-left">
+							<image class="card-thumb" :src="garden.thumb" mode="aspectFill"></image>
+							<text class="card-title">{{ garden.title }}</text>
+							<view v-if="garden.isDefault" class="default-badge">
+								<text>默认</text>
 							</view>
-							<up-icon name="arrow-right" size="12" color="#7bc59a"></up-icon>
+							<view class="action-btn" @tap.stop="onEditGardenInfo">
+								<up-icon name="edit-pen" size="16" color="#33c26d"></up-icon>
+								<text>编辑</text>
+							</view>
+						</view>
+						<text class="card-sub-title">{{ garden.subTitle }}</text>
+					</view>
+
+					<image class="cover" :src="garden.image" mode="aspectFill"></image>
+					<view class="card-desc">{{ garden.description }}</view>
+
+					<view class="foot-divider">
+						<view class="foot-stats">
+							<view
+								v-for="item in createFooterStats(garden)"
+								:key="item.key"
+								class="foot-item"
+								@tap.stop="onFooterAction(item)"
+							>
+								<view class="foot-item-main">
+									<up-icon :name="item.icon" size="16" :color="item.color"></up-icon>
+									<text>{{ item.label }}</text>
+								</view>
+								<up-icon name="arrow-right" size="12" color="#7bc59a"></up-icon>
+							</view>
 						</view>
 					</view>
-				</view>
-			</template>
-		</up-card>
+				</template>
+			</up-card>
+		</view>
+		<view v-else class="empty-garden">暂无花园，请点击右下角加号创建</view>
 
 		<view class="floating-add-btn" @tap="onAddGarden">
 			<up-icon name="plus" size="20" color="#ffffff"></up-icon>
@@ -51,8 +59,11 @@
 <script setup>
 import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
+import { listCareTasks, listGardens, listPlants } from '@/api'
 
-const gardenStorageKey = 'gardenInfo'
+const SELECTED_GARDEN_KEY = 'selectedGardenId'
+const SELECTED_PLANT_FILTER_KEY = 'selectedPlantFilter'
+
 const defaultGardenInfo = {
 	title: '我的莫奈花园',
 	subTitle: '2020-05-15',
@@ -61,14 +72,39 @@ const defaultGardenInfo = {
 	description: '釉色渲染仕女图韵味被私藏，而你嫣然的一笑如含苞待放'
 }
 
-const cardData = ref({
-	...defaultGardenInfo
-})
+const gardenCards = ref([])
 
-const footerStats = [
-	{ key: 'plant', icon: 'grid-fill', color: '#33c26d', label: '绿植 20', path: '/pages/plant/plant', mode: 'navigateTo' },
-	{ key: 'focus', icon: 'heart-fill', color: '#33c26d', label: '需关注 2', path: '/pages/care/care', mode: 'switchTab' },
-	{ key: 'care', icon: 'clock-fill', color: '#33c26d', label: '今日呵护 10', path: '/pages/mime/mime', mode: 'switchTab' }
+const createFooterStats = (garden) => [
+	{
+		key: 'plant',
+		icon: 'grid-fill',
+		color: '#33c26d',
+		label: `绿植 ${garden?.plantCount || 0}`,
+		path: '/pages/plant/plant',
+		mode: 'switchTab',
+		gardenId: garden?.id ?? '',
+		plantFilter: 'all'
+	},
+	{
+		key: 'care',
+		icon: 'heart-fill',
+		color: '#33c26d',
+		label: `今日养护 ${garden?.todayCareCount || 0}`,
+		path: '/pages/plant/plant',
+		mode: 'switchTab',
+		gardenId: garden?.id ?? '',
+		plantFilter: 'todo'
+	},
+	{
+		key: 'focus',
+		icon: 'warning-fill',
+		color: '#33c26d',
+		label: `需关注 ${garden?.focusCount || 0}`,
+		path: '/pages/plant/plant',
+		mode: 'switchTab',
+		gardenId: garden?.id ?? '',
+		plantFilter: 'focus'
+	}
 ]
 
 const onCardClick = () => {
@@ -90,14 +126,62 @@ const onAddGarden = () => {
 	})
 }
 
-const loadGardenInfo = () => {
-	const saved = uni.getStorageSync(gardenStorageKey)
-	if (!saved || typeof saved !== 'object') return
+const loadCountsByGarden = () => {
+	if (!gardenCards.value.length) return Promise.resolve()
+	return Promise.all(
+		gardenCards.value.map((garden) =>
+			Promise.all([
+				listPlants(undefined, garden.id),
+				listCareTasks(garden.id),
+				listPlants('focus', garden.id)
+			]).then(([plants, tasks, focusedPlants]) => ({
+				id: garden.id,
+				plantCount: (plants || []).length,
+				todayCareCount: (tasks || []).filter((task) => task?.offset === 0).length,
+				focusCount: (focusedPlants || []).length
+			}))
+				.catch(() => ({
+					id: garden.id,
+					plantCount: 0,
+					todayCareCount: 0,
+					focusCount: 0
+				}))
+		)
+	).then((rows) => {
+		const map = new Map(rows.map((item) => [item.id, item]))
+		gardenCards.value = gardenCards.value.map((garden) => ({
+			...garden,
+			plantCount: map.get(garden.id)?.plantCount || 0,
+			todayCareCount: map.get(garden.id)?.todayCareCount || 0,
+			focusCount: map.get(garden.id)?.focusCount || 0
+		}))
+	})
+}
 
-	cardData.value = {
-		...defaultGardenInfo,
-		...saved
-	}
+const loadGardenInfo = () => {
+	listGardens()
+		.then((rows) => {
+			gardenCards.value = (rows || []).map((item, index) => ({
+				id: item?.id || `${index}`,
+				title: item?.name || defaultGardenInfo.title,
+				subTitle: item?.establishedDate || defaultGardenInfo.subTitle,
+				thumb: item?.thumbUrl || defaultGardenInfo.thumb,
+				image: item?.coverUrl || defaultGardenInfo.image,
+				description: item?.description || defaultGardenInfo.description,
+				isDefault: !!item?.isDefault,
+				plantCount: 0,
+				todayCareCount: 0,
+				focusCount: 0
+			}))
+			return loadCountsByGarden()
+		})
+		.catch((err) => {
+			uni.showToast({
+				title: err?.message || '加载花园信息失败',
+				icon: 'none'
+			})
+			gardenCards.value = []
+		})
 }
 
 onShow(() => {
@@ -105,13 +189,12 @@ onShow(() => {
 })
 
 const onFooterAction = (item) => {
-	const currentPage = getCurrentPages().slice(-1)[0]
-	if (currentPage?.route && `/${currentPage.route}` === item.path) {
-		uni.showToast({
-			title: `${item.label} 当前页`,
-			icon: 'none'
-		})
-		return
+	const gardenId = `${item?.gardenId ?? ''}`.trim()
+	if (gardenId) {
+		uni.setStorageSync(SELECTED_GARDEN_KEY, gardenId)
+	}
+	if (item?.plantFilter) {
+		uni.setStorageSync(SELECTED_PLANT_FILTER_KEY, item.plantFilter)
 	}
 	if (item.mode === 'switchTab') {
 		uni.switchTab({
@@ -144,6 +227,12 @@ const onFooterAction = (item) => {
 		background: #f6fcf8;
 	}
 
+	.garden-list {
+		display: flex;
+		flex-direction: column;
+		gap: 16rpx;
+	}
+
 	.card-head {
 		display: flex;
 		align-items: center;
@@ -168,10 +257,20 @@ const onFooterAction = (item) => {
 		font-size: 30rpx;
 		font-weight: 700;
 		color: #1f7a44;
-		max-width: 250rpx;
+		max-width: 210rpx;
 		overflow: hidden;
 		white-space: nowrap;
 		text-overflow: ellipsis;
+	}
+
+	.default-badge {
+		padding: 4rpx 10rpx;
+		border-radius: 999rpx;
+		background: #eaf9f0;
+		border: 1px solid #d7efdf;
+		font-size: 20rpx;
+		color: #2f8f56;
+		flex-shrink: 0;
 	}
 
 	.action-btn {
@@ -263,6 +362,13 @@ const onFooterAction = (item) => {
 		background: #33c26d;
 		box-shadow: 0 12rpx 26rpx rgba(51, 194, 109, 0.35);
 		z-index: 99;
+	}
+
+	.empty-garden {
+		margin-top: 40rpx;
+		font-size: 24rpx;
+		color: #8ea096;
+		text-align: center;
 	}
 
 </style>

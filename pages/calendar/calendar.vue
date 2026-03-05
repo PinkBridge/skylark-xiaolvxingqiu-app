@@ -1,5 +1,20 @@
 <template>
-	<view class="calendar-page">
+	<view class="calendar-page" :style="{ paddingTop: `${navMetrics.navBarHeight + 12}px` }">
+		<view class="custom-nav">
+			<view
+				class="custom-nav-inner"
+				:style="{
+					marginTop: `${navMetrics.statusBarHeight}px`,
+					height: `${navMetrics.contentBarHeight}px`
+				}"
+			>
+				<view class="custom-nav-home" @tap="goIndexPage">
+					<up-icon name="home" size="14" color="#33c26d"></up-icon>
+					<text>首页</text>
+				</view>
+				<text class="custom-nav-title">养护日历</text>
+			</view>
+		</view>
 		<up-card :showHead="false" :showFoot="false" :border="false" margin="0">
 			<template #body>
 				<view class="calendar-head">
@@ -108,6 +123,31 @@
 
 <script setup>
 import { computed, ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
+import { listCareActivitiesByDate, listCareActivitiesByMonth } from '@/api'
+
+const SELECTED_GARDEN_KEY = 'selectedGardenId'
+const navMetrics = ref(resolveNavMetrics())
+
+function resolveNavMetrics() {
+	const systemInfo = uni.getSystemInfoSync ? uni.getSystemInfoSync() : {}
+	const statusBarHeight = Number(systemInfo.statusBarHeight || 20)
+	let capsuleHeight = 32
+	let gap = 6
+	try {
+		const menu = uni.getMenuButtonBoundingClientRect ? uni.getMenuButtonBoundingClientRect() : null
+		if (menu && menu.top && menu.height && menu.left) {
+			capsuleHeight = menu.height
+			gap = Math.max(4, menu.top - statusBarHeight)
+		}
+	} catch (e) {}
+	const navBarHeight = Math.max(statusBarHeight + capsuleHeight + gap * 2, statusBarHeight + 44)
+	return {
+		statusBarHeight,
+		navBarHeight,
+		contentBarHeight: navBarHeight - statusBarHeight
+	}
+}
 
 const weekList = ['日', '一', '二', '三', '四', '五', '六']
 
@@ -116,122 +156,10 @@ const todayKey = formatDate(today)
 const selectedDate = ref(todayKey)
 const currentMonthDate = ref(new Date(today.getFullYear(), today.getMonth(), 1))
 
-const careActivityList = ref([
-	{
-		id: 'a1',
-		date: '2026-03-02',
-		time: '08:30',
-		name: '浇水',
-		plantName: '常春藤',
-		completed: true,
-		icon: '/static/icon/water.png',
-		record: {
-			amount: '180',
-			method: '喷雾',
-			photo: '/static/flower/flower-1.jpg',
-			note: '表土偏干，补水后叶片恢复挺立'
-		}
-	},
-	{
-		id: 'a2',
-		date: '2026-03-02',
-		time: '09:20',
-		name: '施肥',
-		plantName: '龟背竹',
-		completed: true,
-		icon: '/static/icon/fertilize.png',
-		record: {
-			material: '花多多2号',
-			photo: '/static/flower/flower-2.jpg',
-			note: '按1:1000稀释后浇施'
-		}
-	},
-	{
-		id: 'a3',
-		date: '2026-03-02',
-		time: '10:10',
-		name: '修剪',
-		plantName: '发财树',
-		completed: true,
-		icon: '/static/icon/prune.png',
-		record: {
-			part: '黄叶',
-			photo: '/static/flower/flower-3.jpg',
-			note: '去除老叶，保留新芽'
-		}
-	},
-	{
-		id: 'a4',
-		date: '2026-03-02',
-		time: '11:00',
-		name: '换盆',
-		plantName: '多肉白牡丹',
-		completed: true,
-		icon: '/static/icon/repot.png',
-		record: {
-			potSize: '14cm',
-			photo: '/static/flower/flower-4.jpg',
-			note: '新盆透气性更好，底部垫陶粒'
-		}
-	},
-	{
-		id: 'a5',
-		date: '2026-03-02',
-		time: '13:30',
-		name: '病虫害',
-		plantName: '吊兰',
-		completed: true,
-		icon: '/static/icon/pest.png',
-		record: {
-			type: '蚜虫',
-			treatment: '肥皂水',
-			photo: '/static/flower/flower-5.jpg',
-			note: '喷洒后擦拭叶背，观察48小时'
-		}
-	},
-	{
-		id: 'a6',
-		date: '2026-03-02',
-		time: '15:00',
-		name: '测量',
-		plantName: '虎皮兰',
-		completed: true,
-		icon: '/static/icon/measure.png',
-		record: {
-			weight: '2.6kg',
-			height: '48cm',
-			photo: '/static/flower/flower-6.jpg',
-			note: '较上周增高约1cm'
-		}
-	},
-	{
-		id: 'a7',
-		date: '2026-03-02',
-		time: '17:10',
-		name: '拍照',
-		plantName: '绿萝',
-		completed: true,
-		icon: '/static/icon/photo.png',
-		record: {
-			photo: '/static/flower/flower-7.jpg',
-			note: '叶色饱满，记录当前长势'
-		}
-	},
-	{
-		id: 'a8',
-		date: '2026-03-02',
-		time: '18:20',
-		name: '松土',
-		plantName: '琴叶榕',
-		completed: true,
-		icon: '/static/icon/loosen.png',
-		record: {
-			photo: '/static/flower/flower-8.jpg',
-			note: '浅层松土，改善根部透气'
-		}
-	},
-	{ id: 'a9', date: '2026-03-03', time: '10:00', name: '浇水', plantName: '常春藤', completed: false, icon: '/static/icon/water.png' }
-])
+const careActivityList = ref([])
+const selectedGardenId = ref('')
+
+const readSelectedGardenId = () => `${uni.getStorageSync(SELECTED_GARDEN_KEY) || ''}`.trim()
 
 const monthLabel = computed(() => {
 	const year = currentMonthDate.value.getFullYear()
@@ -269,11 +197,11 @@ const calendarDays = computed(() => {
 	return list
 })
 
-const selectedActivities = computed(() =>
-	careActivityList.value
+const selectedActivities = computed(() => {
+	return careActivityList.value
 		.filter((item) => item.date === selectedDate.value)
-		.sort((a, b) => a.time.localeCompare(b.time))
-)
+		.sort((a, b) => (a.time || '').localeCompare(b.time || ''))
+})
 
 const showRecordPopup = ref(false)
 const currentRecordActivity = ref(null)
@@ -341,15 +269,18 @@ function formatDate(date) {
 const goPrevMonth = () => {
 	const current = currentMonthDate.value
 	currentMonthDate.value = new Date(current.getFullYear(), current.getMonth() - 1, 1)
+	loadMonthActivities()
 }
 
 const goNextMonth = () => {
 	const current = currentMonthDate.value
 	currentMonthDate.value = new Date(current.getFullYear(), current.getMonth() + 1, 1)
+	loadMonthActivities()
 }
 
 const selectDay = (day) => {
 	selectedDate.value = day.dateKey
+	loadDateActivities(day.dateKey)
 }
 
 const openCompletedRecord = (activity) => {
@@ -376,6 +307,52 @@ const getStatusClass = (activity) => {
 	if (activity.completed) return 'status-done'
 	return 'status-pending'
 }
+
+const getCurrentMonth = () => {
+	const year = currentMonthDate.value.getFullYear()
+	const month = `${currentMonthDate.value.getMonth() + 1}`.padStart(2, '0')
+	return `${year}-${month}`
+}
+
+const loadMonthActivities = () => {
+	listCareActivitiesByMonth(getCurrentMonth(), selectedGardenId.value || undefined)
+		.then((activities) => {
+			careActivityList.value = activities || []
+		})
+		.catch((err) => {
+			uni.showToast({
+				title: err?.message || '加载月活动失败',
+				icon: 'none'
+			})
+		})
+}
+
+const loadDateActivities = (date) => {
+	listCareActivitiesByDate(date, selectedGardenId.value || undefined)
+		.then((activities) => {
+			const map = new Map((careActivityList.value || []).map((item) => [item.id, item]))
+			;(activities || []).forEach((item) => map.set(item.id, item))
+			careActivityList.value = Array.from(map.values())
+		})
+		.catch(() => {})
+}
+
+const goIndexPage = () => {
+	uni.reLaunch({
+		url: '/pages/index/index',
+		fail: () => {
+			uni.redirectTo({
+				url: '/pages/index/index'
+			})
+		}
+	})
+}
+
+onShow(() => {
+	selectedGardenId.value = readSelectedGardenId()
+	loadMonthActivities()
+	loadDateActivities(selectedDate.value)
+})
 </script>
 
 <style scoped lang="scss">
@@ -383,6 +360,51 @@ const getStatusClass = (activity) => {
 		min-height: 100vh;
 		padding: 20rpx 24rpx 24rpx;
 		background: #f6fcf8;
+	}
+
+	.custom-nav {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		z-index: 120;
+		background: #f6fcf8;
+	}
+
+	.custom-nav-inner {
+		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 100%;
+		box-sizing: border-box;
+	}
+
+	.custom-nav-home {
+		position: absolute;
+		left: 24rpx;
+		top: 50%;
+		transform: translateY(-50%);
+		display: flex;
+		align-items: center;
+		gap: 6rpx;
+		padding: 6rpx 12rpx;
+		height: 44rpx;
+		border-radius: 999rpx;
+		background: #ffffff;
+		border: 1px solid #d9d9d9;
+		font-size: 20rpx;
+		font-weight: 600;
+		color: #1f1f1f;
+		box-sizing: border-box;
+	}
+
+	.custom-nav-title {
+		font-size: 32rpx;
+		line-height: 44rpx;
+		font-weight: 600;
+		color: #1f1f1f;
+		text-align: center;
 	}
 
 	.calendar-head {

@@ -74,8 +74,8 @@
 
 <script setup>
 import { reactive, ref } from 'vue'
+import { getUserProfile, updateUserProfile } from '@/api'
 
-const profileStorageKey = 'userProfile'
 const defaultAvatar = 'https://cdn.uviewui.com/uview/example/button.png'
 const genderOptions = ['男', '女', '保密']
 const genderValues = ['male', 'female', 'unknown']
@@ -93,17 +93,18 @@ const showDatePicker = ref(false)
 const datePickerValue = ref(Date.now())
 
 const loadProfile = () => {
-	const savedProfile = uni.getStorageSync(profileStorageKey)
-	if (!savedProfile || typeof savedProfile !== 'object') return
+	getUserProfile()
+		.then((savedProfile) => {
+			form.avatar = savedProfile?.avatar || defaultAvatar
+			form.name = savedProfile?.name || ''
+			form.gender = savedProfile?.gender || 'male'
+			form.birthday = savedProfile?.birthday || ''
+			form.motto = savedProfile?.motto || form.motto
 
-	form.avatar = savedProfile.avatar || defaultAvatar
-	form.name = savedProfile.name || ''
-	form.gender = savedProfile.gender || 'male'
-	form.birthday = savedProfile.birthday || ''
-	form.motto = savedProfile.motto || form.motto
-
-	const index = genderValues.findIndex((item) => item === form.gender)
-	genderIndex.value = index > -1 ? index : 0
+			const index = genderValues.findIndex((item) => item === form.gender)
+			genderIndex.value = index > -1 ? index : 0
+		})
+		.catch(() => {})
 }
 
 loadProfile()
@@ -152,22 +153,28 @@ const saveProfile = () => {
 		return
 	}
 
-	uni.setStorageSync(profileStorageKey, {
+	updateUserProfile({
 		avatar: form.avatar || defaultAvatar,
 		name: form.name.trim(),
 		gender: form.gender,
 		birthday: form.birthday,
 		motto: form.motto.trim() || '每一份生命都值得尊重和呵护!'
 	})
-
-	uni.showToast({
-		title: '保存成功',
-		icon: 'success'
-	})
-
-	setTimeout(() => {
-		uni.navigateBack()
-	}, 400)
+		.then(() => {
+			uni.showToast({
+				title: '保存成功',
+				icon: 'success'
+			})
+			setTimeout(() => {
+				uni.navigateBack()
+			}, 400)
+		})
+		.catch((err) => {
+			uni.showToast({
+				title: err?.message || '保存失败',
+				icon: 'none'
+			})
+		})
 }
 </script>
 

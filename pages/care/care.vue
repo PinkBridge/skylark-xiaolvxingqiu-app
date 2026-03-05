@@ -1,5 +1,20 @@
 <template>
-	<view class="care-page">
+	<view class="care-page" :style="{ paddingTop: `${navMetrics.navBarHeight + 12}px` }">
+		<view class="custom-nav">
+			<view
+				class="custom-nav-inner"
+				:style="{
+					marginTop: `${navMetrics.statusBarHeight}px`,
+					height: `${navMetrics.contentBarHeight}px`
+				}"
+			>
+				<view class="custom-nav-home" @tap="goIndexPage">
+					<up-icon name="home" size="14" color="#33c26d"></up-icon>
+					<text>首页</text>
+				</view>
+				<text class="custom-nav-title">养护管理</text>
+			</view>
+		</view>
 		<up-card :showHead="false" :showFoot="false" :border="false" margin="0">
 			<template #body>
 				<view class="page-head">
@@ -12,7 +27,7 @@
 
 		<view class="section-wrap">
 			<view class="section-head">
-				<text class="section-title">今日呵护</text>
+				<text class="section-title">今日养护</text>
 				<view class="section-right">
 					<text class="section-count">{{ todayTasks.length }} 项</text>
 					<view
@@ -55,7 +70,7 @@
 							</view>
 						</view>
 					</view>
-					<view v-else class="empty-text">今日暂无待呵护活动</view>
+					<view v-else class="empty-text">暂无养护活动</view>
 				</template>
 			</up-card>
 		</view>
@@ -96,7 +111,7 @@
 							</view>
 						</view>
 					</view>
-					<view v-else class="empty-text">未来三天暂无待呵护活动</view>
+					<view v-else class="empty-text">暂无养护活动</view>
 				</template>
 			</up-card>
 		</view>
@@ -124,6 +139,7 @@
 										<text class="task-plant">{{ task.plantName }}</text>
 									</view>
 									<text class="task-time">{{ task.completeText }}</text>
+									<text v-if="task.recordText" class="task-time">{{ task.recordText }}</text>
 								</view>
 							</view>
 							<view class="task-action task-action-done">
@@ -131,8 +147,8 @@
 							</view>
 						</view>
 					</view>
-					<view v-else class="empty-text">最近10天暂无已完成任务</view>
-					<text class="section-tip">仅展示最近10天的呵护记录</text>
+					<view v-else class="empty-text">暂无已完成任务</view>
+					<text class="section-tip">仅展示最近10天的养护记录</text>
 				</template>
 			</up-card>
 			
@@ -680,28 +696,37 @@
 
 <script setup>
 import { computed, reactive, ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
+import { completeCareTask, listCareActivitiesByMonth, listCareTasks } from '@/api'
 
-const careTaskList = ref([
-	{ id: 't1', offset: 0, icon: '/static/icon/water.png', name: '浇水', plantName: '常春藤', timeText: '今天 09:30', completed: false },
-	{ id: 't2', offset: 0, icon: '/static/icon/fertilize.png', name: '施肥', plantName: '龟背竹', timeText: '今天 10:00', completed: false },
-	{ id: 't3', offset: 0, icon: '/static/icon/prune.png', name: '修剪', plantName: '发财树', timeText: '今天 11:30', completed: false },
-	{ id: 't4', offset: 0, icon: '/static/icon/repot.png', name: '换盆', plantName: '多肉白牡丹', timeText: '今天 14:00', completed: false },
-	{ id: 't5', offset: 0, icon: '/static/icon/pest.png', name: '病虫害', plantName: '吊兰', timeText: '今天 15:20', completed: false },
-	{ id: 't6', offset: 0, icon: '/static/icon/measure.png', name: '测量', plantName: '虎皮兰', timeText: '今天 17:00', completed: true },
-	{ id: 't7', offset: 0, icon: '/static/icon/photo.png', name: '拍照', plantName: '绿萝', timeText: '今天 18:30', completed: false },
-	{ id: 't8', offset: 0, icon: '/static/icon/loosen.png', name: '松土', plantName: '琴叶榕', timeText: '今天 20:00', completed: false },
-	{ id: 't9', offset: 1, icon: '/static/icon/water.png', name: '浇水', plantName: '绿萝', timeText: '明天 09:30', completed: false },
-	{ id: 't10', offset: 2, icon: '/static/icon/fertilize.png', name: '施肥', plantName: '常春藤', timeText: '后天 10:00', completed: false },
-	{ id: 't11', offset: 3, icon: '/static/icon/measure.png', name: '测量', plantName: '虎皮兰', timeText: '第3天 20:00', completed: false }
-])
+const SELECTED_GARDEN_KEY = 'selectedGardenId'
+const navMetrics = ref(resolveNavMetrics())
 
-const completedTaskHistory = ref([
-	{ id: 'c1', icon: '/static/icon/water.png', name: '浇水', plantName: '常春藤', dayAgo: 1, completeText: '1天前 09:20 完成' },
-	{ id: 'c2', icon: '/static/icon/prune.png', name: '修剪', plantName: '发财树', dayAgo: 2, completeText: '2天前 18:10 完成' },
-	{ id: 'c3', icon: '/static/icon/fertilize.png', name: '施肥', plantName: '龟背竹', dayAgo: 4, completeText: '4天前 10:00 完成' },
-	{ id: 'c4', icon: '/static/icon/measure.png', name: '测量', plantName: '虎皮兰', dayAgo: 7, completeText: '7天前 20:30 完成' },
-	{ id: 'c5', icon: '/static/icon/photo.png', name: '拍照', plantName: '绿萝', dayAgo: 10, completeText: '10天前 19:40 完成' }
-])
+function resolveNavMetrics() {
+	const systemInfo = uni.getSystemInfoSync ? uni.getSystemInfoSync() : {}
+	const statusBarHeight = Number(systemInfo.statusBarHeight || 20)
+	let capsuleHeight = 32
+	let gap = 6
+	try {
+		const menu = uni.getMenuButtonBoundingClientRect ? uni.getMenuButtonBoundingClientRect() : null
+		if (menu && menu.top && menu.height && menu.left) {
+			capsuleHeight = menu.height
+			gap = Math.max(4, menu.top - statusBarHeight)
+		}
+	} catch (e) {}
+	const navBarHeight = Math.max(statusBarHeight + capsuleHeight + gap * 2, statusBarHeight + 44)
+	return {
+		statusBarHeight,
+		navBarHeight,
+		contentBarHeight: navBarHeight - statusBarHeight
+	}
+}
+
+const careTaskList = ref([])
+const completedTaskHistory = ref([])
+const selectedGardenId = ref('')
+
+const readSelectedGardenId = () => `${uni.getStorageSync(SELECTED_GARDEN_KEY) || ''}`.trim()
 
 const todayTasks = computed(() => careTaskList.value.filter((task) => task.offset === 0))
 const upcomingTasks = computed(() =>
@@ -803,6 +828,86 @@ const bugForm = reactive({
 	photo: '',
 	note: ''
 })
+
+const loadCareTasks = () => {
+	listCareTasks(selectedGardenId.value || undefined)
+		.then((tasks) => {
+			careTaskList.value = tasks || []
+		})
+		.catch((err) => {
+			uni.showToast({
+				title: err?.message || '加载任务失败',
+				icon: 'none'
+			})
+		})
+}
+
+const loadCompletedHistory = () => {
+	const nowDate = new Date()
+	const currentMonth = nowDate.toISOString().slice(0, 7)
+	const prevDate = new Date(nowDate.getFullYear(), nowDate.getMonth() - 1, 1)
+	const prevMonth = `${prevDate.getFullYear()}-${`${prevDate.getMonth() + 1}`.padStart(2, '0')}`
+	Promise.all([
+		listCareActivitiesByMonth(currentMonth, selectedGardenId.value || undefined),
+		listCareActivitiesByMonth(prevMonth, selectedGardenId.value || undefined)
+	])
+		.then((results) => {
+			const activities = [...(results[0] || []), ...(results[1] || [])]
+			const now = Date.now()
+			completedTaskHistory.value = (activities || [])
+				.filter((item) => item.completed)
+				.map((item) => {
+					const targetTime = new Date(`${item.date}T${item.time || '00:00'}:00`).getTime()
+					const dayAgo = Math.max(0, Math.floor((now - targetTime) / (24 * 3600 * 1000)))
+					return {
+						id: item.id,
+						icon: item.icon,
+						name: item.name,
+						plantName: item.plantName,
+						dayAgo,
+						completeText: `${dayAgo}天前 ${item.time || ''} 完成`,
+						recordText: formatRecordSummary(item.name, item.record)
+					}
+				})
+		})
+		.catch(() => {
+			completedTaskHistory.value = []
+		})
+}
+
+const formatRecordSummary = (name, record) => {
+	if (!record || typeof record !== 'object') return ''
+	if (name === '浇水') {
+		const parts = []
+		if (record.amount !== undefined && record.amount !== null && `${record.amount}` !== '') {
+			parts.push(`水量${record.amount}ml`)
+		}
+		if (record.method) parts.push(`${record.method}`)
+		return parts.join('，')
+	}
+	if (name === '施肥') return record.material ? `用料：${record.material}` : ''
+	if (name === '修剪') return record.part ? `部位：${record.part}` : ''
+	if (name === '换盆') return record.potSize ? `新盆：${record.potSize}` : ''
+	if (name === '测量') {
+		const parts = []
+		if (record.weight !== undefined && record.weight !== null && `${record.weight}` !== '') {
+			parts.push(`重量${record.weight}g`)
+		}
+		if (record.height !== undefined && record.height !== null && `${record.height}` !== '') {
+			parts.push(`高度${record.height}cm`)
+		}
+		return parts.join('，')
+	}
+	if (name === '病虫害') {
+		const parts = []
+		if (record.type) parts.push(`类型：${record.type}`)
+		if (record.treatment) parts.push(`处理：${record.treatment}`)
+		return parts.join('，')
+	}
+	if (name === '拍照') return record.photo ? '已上传照片' : ''
+	if (name === '松土') return record.photo ? '已上传照片' : ''
+	return ''
+}
 
 const getDayLabel = (offset) => {
 	if (offset <= 0) return '今天'
@@ -991,78 +1096,80 @@ const onPhotoSourceSelect = (action) => {
 	})
 }
 
-const getCurrentTimeText = (offset) => {
-	const now = new Date()
-	const hh = `${now.getHours()}`.padStart(2, '0')
-	const mm = `${now.getMinutes()}`.padStart(2, '0')
-	return `${getDayLabel(offset)} ${hh}:${mm}`
-}
-
 const submitWateringRecord = () => {
-	const task = careTaskList.value.find((item) => item.id === activeWateringTaskId.value)
-	if (!task) {
-		showWateringPopup.value = false
-		return
-	}
-
-	task.completed = true
-	task.timeText = getCurrentTimeText(task.offset)
-
-	showWateringPopup.value = false
-	uni.showToast({
-		title: '浇水记录已保存',
-		icon: 'success'
+	const taskId = activeWateringTaskId.value
+	if (!taskId) return
+	completeCareTask(taskId, {
+		amount: wateringForm.amount ? Number(wateringForm.amount) : null,
+		method: wateringForm.method || null,
+		photo: wateringForm.photo || null,
+		note: wateringForm.note?.trim() || null
 	})
+		.then(() => {
+			showWateringPopup.value = false
+			loadCareTasks()
+			loadCompletedHistory()
+			uni.showToast({
+				title: '浇水记录已保存',
+				icon: 'success'
+			})
+		})
+		.catch((err) => {
+			uni.showToast({
+				title: err?.message || '保存失败',
+				icon: 'none'
+			})
+		})
 }
 
 const submitFertilizeRecord = () => {
-	const task = careTaskList.value.find((item) => item.id === activeFertilizeTaskId.value)
-	if (!task) {
+	const taskId = activeFertilizeTaskId.value
+	if (!taskId) return
+	completeCareTask(taskId, {
+		material: fertilizeForm.material || null,
+		photo: fertilizeForm.photo || null,
+		note: fertilizeForm.note?.trim() || null
+	}).then(() => {
 		showFertilizePopup.value = false
-		return
-	}
-
-	task.completed = true
-	task.timeText = getCurrentTimeText(task.offset)
-
-	showFertilizePopup.value = false
-	uni.showToast({
-		title: '施肥记录已保存',
-		icon: 'success'
+		loadCareTasks()
+		loadCompletedHistory()
+		uni.showToast({ title: '施肥记录已保存', icon: 'success' })
+	}).catch((err) => {
+		uni.showToast({ title: err?.message || '保存失败', icon: 'none' })
 	})
 }
 
 const submitPruneRecord = () => {
-	const task = careTaskList.value.find((item) => item.id === activePruneTaskId.value)
-	if (!task) {
+	const taskId = activePruneTaskId.value
+	if (!taskId) return
+	completeCareTask(taskId, {
+		part: pruneForm.part || null,
+		photo: pruneForm.photo || null,
+		note: pruneForm.note?.trim() || null
+	}).then(() => {
 		showPrunePopup.value = false
-		return
-	}
-
-	task.completed = true
-	task.timeText = getCurrentTimeText(task.offset)
-
-	showPrunePopup.value = false
-	uni.showToast({
-		title: '修剪记录已保存',
-		icon: 'success'
+		loadCareTasks()
+		loadCompletedHistory()
+		uni.showToast({ title: '修剪记录已保存', icon: 'success' })
+	}).catch((err) => {
+		uni.showToast({ title: err?.message || '保存失败', icon: 'none' })
 	})
 }
 
 const submitRepotRecord = () => {
-	const task = careTaskList.value.find((item) => item.id === activeRepotTaskId.value)
-	if (!task) {
+	const taskId = activeRepotTaskId.value
+	if (!taskId) return
+	completeCareTask(taskId, {
+		potSize: repotForm.potSize || null,
+		photo: repotForm.photo || null,
+		note: repotForm.note?.trim() || null
+	}).then(() => {
 		showRepotPopup.value = false
-		return
-	}
-
-	task.completed = true
-	task.timeText = getCurrentTimeText(task.offset)
-
-	showRepotPopup.value = false
-	uni.showToast({
-		title: '换盆记录已保存',
-		icon: 'success'
+		loadCareTasks()
+		loadCompletedHistory()
+		uni.showToast({ title: '换盆记录已保存', icon: 'success' })
+	}).catch((err) => {
+		uni.showToast({ title: err?.message || '保存失败', icon: 'none' })
 	})
 }
 
@@ -1082,36 +1189,36 @@ const submitShotRecord = () => {
 		return
 	}
 
-	const task = careTaskList.value.find((item) => item.id === activeShotTaskId.value)
-	if (!task) {
+	const taskId = activeShotTaskId.value
+	if (!taskId) return
+	completeCareTask(taskId, {
+		photo: shotForm.photo || null,
+		note: shotForm.note?.trim() || null
+	}).then(() => {
 		showShotPopup.value = false
-		return
-	}
-
-	task.completed = true
-	task.timeText = getCurrentTimeText(task.offset)
-
-	showShotPopup.value = false
-	uni.showToast({
-		title: '拍照记录已保存',
-		icon: 'success'
+		loadCareTasks()
+		loadCompletedHistory()
+		uni.showToast({ title: '拍照记录已保存', icon: 'success' })
+	}).catch((err) => {
+		uni.showToast({ title: err?.message || '保存失败', icon: 'none' })
 	})
 }
 
 const submitMeasureRecord = () => {
-	const task = careTaskList.value.find((item) => item.id === activeMeasureTaskId.value)
-	if (!task) {
+	const taskId = activeMeasureTaskId.value
+	if (!taskId) return
+	completeCareTask(taskId, {
+		weight: measureForm.weight ? Number(measureForm.weight) : null,
+		height: measureForm.height ? Number(measureForm.height) : null,
+		photo: measureForm.photo || null,
+		note: measureForm.note?.trim() || null
+	}).then(() => {
 		showMeasurePopup.value = false
-		return
-	}
-
-	task.completed = true
-	task.timeText = getCurrentTimeText(task.offset)
-
-	showMeasurePopup.value = false
-	uni.showToast({
-		title: '测量记录已保存',
-		icon: 'success'
+		loadCareTasks()
+		loadCompletedHistory()
+		uni.showToast({ title: '测量记录已保存', icon: 'success' })
+	}).catch((err) => {
+		uni.showToast({ title: err?.message || '保存失败', icon: 'none' })
 	})
 }
 
@@ -1131,19 +1238,18 @@ const submitLoosenRecord = () => {
 		return
 	}
 
-	const task = careTaskList.value.find((item) => item.id === activeLoosenTaskId.value)
-	if (!task) {
+	const taskId = activeLoosenTaskId.value
+	if (!taskId) return
+	completeCareTask(taskId, {
+		photo: loosenForm.photo || null,
+		note: loosenForm.note?.trim() || null
+	}).then(() => {
 		showLoosenPopup.value = false
-		return
-	}
-
-	task.completed = true
-	task.timeText = getCurrentTimeText(task.offset)
-
-	showLoosenPopup.value = false
-	uni.showToast({
-		title: '松土记录已保存',
-		icon: 'success'
+		loadCareTasks()
+		loadCompletedHistory()
+		uni.showToast({ title: '松土记录已保存', icon: 'success' })
+	}).catch((err) => {
+		uni.showToast({ title: err?.message || '保存失败', icon: 'none' })
 	})
 }
 
@@ -1163,19 +1269,20 @@ const submitBugRecord = () => {
 		return
 	}
 
-	const task = careTaskList.value.find((item) => item.id === activeBugTaskId.value)
-	if (!task) {
+	const taskId = activeBugTaskId.value
+	if (!taskId) return
+	completeCareTask(taskId, {
+		type: bugForm.type || null,
+		treatment: bugForm.treatment || null,
+		photo: bugForm.photo || null,
+		note: bugForm.note?.trim() || null
+	}).then(() => {
 		showBugPopup.value = false
-		return
-	}
-
-	task.completed = true
-	task.timeText = getCurrentTimeText(task.offset)
-
-	showBugPopup.value = false
-	uni.showToast({
-		title: '病虫害记录已保存',
-		icon: 'success'
+		loadCareTasks()
+		loadCompletedHistory()
+		uni.showToast({ title: '病虫害记录已保存', icon: 'success' })
+	}).catch((err) => {
+		uni.showToast({ title: err?.message || '保存失败', icon: 'none' })
 	})
 }
 
@@ -1189,12 +1296,37 @@ const completeTodayTasks = () => {
 		confirmColor: '#33c26d',
 		success: (res) => {
 			if (!res.confirm) return
-			todayPendingTasks.forEach((task) => {
-				task.completed = true
+			Promise.all(todayPendingTasks.map((task) => completeCareTask(task.id)))
+				.then(() => {
+					loadCareTasks()
+					loadCompletedHistory()
+				})
+				.catch((err) => {
+					uni.showToast({
+						title: err?.message || '批量完成失败',
+						icon: 'none'
+					})
+				})
+		}
+	})
+}
+
+const goIndexPage = () => {
+	uni.reLaunch({
+		url: '/pages/index/index',
+		fail: () => {
+			uni.redirectTo({
+				url: '/pages/index/index'
 			})
 		}
 	})
 }
+
+onShow(() => {
+	selectedGardenId.value = readSelectedGardenId()
+	loadCareTasks()
+	loadCompletedHistory()
+})
 </script>
 
 <style scoped lang="scss">
@@ -1202,6 +1334,51 @@ const completeTodayTasks = () => {
 		min-height: 100vh;
 		padding: 20rpx 24rpx 24rpx;
 		background: #f6fcf8;
+	}
+
+	.custom-nav {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		z-index: 120;
+		background: #f6fcf8;
+	}
+
+	.custom-nav-inner {
+		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 100%;
+		box-sizing: border-box;
+	}
+
+	.custom-nav-home {
+		position: absolute;
+		left: 24rpx;
+		top: 50%;
+		transform: translateY(-50%);
+		display: flex;
+		align-items: center;
+		gap: 6rpx;
+		padding: 6rpx 12rpx;
+		height: 44rpx;
+		border-radius: 999rpx;
+		background: #ffffff;
+		border: 1px solid #d9d9d9;
+		font-size: 20rpx;
+		font-weight: 600;
+		color: #1f1f1f;
+		box-sizing: border-box;
+	}
+
+	.custom-nav-title {
+		font-size: 32rpx;
+		line-height: 44rpx;
+		font-weight: 600;
+		color: #1f1f1f;
+		text-align: center;
 	}
 
 	.page-head {

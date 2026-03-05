@@ -110,8 +110,8 @@
 
 <script setup>
 import { reactive, ref } from 'vue'
+import { getGardenInfo, updateGardenInfo } from '@/api'
 
-const gardenStorageKey = 'gardenInfo'
 const defaultGardenInfo = {
 	title: '我的莫奈花园',
 	subTitle: '2020-05-15',
@@ -143,16 +143,16 @@ const applyForm = (payload) => {
 }
 
 const loadGardenInfo = () => {
-	const saved = uni.getStorageSync(gardenStorageKey)
-	if (!saved || typeof saved !== 'object') {
-		applyForm(defaultGardenInfo)
-		return
-	}
-
-	applyForm({
-		...defaultGardenInfo,
-		...saved
-	})
+	getGardenInfo()
+		.then((data) => {
+			applyForm({
+				...defaultGardenInfo,
+				...(data || {})
+			})
+		})
+		.catch(() => {
+			applyForm(defaultGardenInfo)
+		})
 }
 
 loadGardenInfo()
@@ -212,22 +212,28 @@ const saveGardenInfo = () => {
 		return
 	}
 
-	uni.setStorageSync(gardenStorageKey, {
+	updateGardenInfo({
 		title: form.title.trim(),
 		subTitle: form.subTitle,
 		thumb: form.thumb,
 		image: form.image,
 		description: form.description.trim()
 	})
-
-	uni.showToast({
-		title: '保存成功',
-		icon: 'success'
-	})
-
-	setTimeout(() => {
-		uni.navigateBack()
-	}, 400)
+		.then(() => {
+			uni.showToast({
+				title: '保存成功',
+				icon: 'success'
+			})
+			setTimeout(() => {
+				uni.navigateBack()
+			}, 400)
+		})
+		.catch((err) => {
+			uni.showToast({
+				title: err?.message || '保存失败',
+				icon: 'none'
+			})
+		})
 }
 </script>
 

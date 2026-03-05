@@ -1,5 +1,6 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
+const api_index = require("../../api/index.js");
 if (!Array) {
   const _easycom_up_icon2 = common_vendor.resolveComponent("up-icon");
   const _easycom_up_gap2 = common_vendor.resolveComponent("up-gap");
@@ -14,7 +15,6 @@ const _easycom_up_cell_group = () => "../../uni_modules/uview-plus/components/u-
 if (!Math) {
   (_easycom_up_icon + _easycom_up_gap + _easycom_up_cell + _easycom_up_cell_group)();
 }
-const profileStorageKey = "userProfile";
 const defaultAvatar = "https://cdn.uviewui.com/uview/example/button.png";
 const _sfc_main = {
   __name: "mime",
@@ -29,15 +29,15 @@ const _sfc_main = {
     });
     const genderIcon = common_vendor.computed(() => profile.value.gender === "female" ? "woman" : "man");
     const loadProfile = () => {
-      const savedProfile = common_vendor.index.getStorageSync(profileStorageKey);
-      if (!savedProfile || typeof savedProfile !== "object")
-        return;
-      profile.value = {
-        name: savedProfile.name || profile.value.name,
-        gender: savedProfile.gender || profile.value.gender,
-        motto: savedProfile.motto || profile.value.motto,
-        avatar: savedProfile.avatar || defaultAvatar
-      };
+      api_index.getUserProfile().then((savedProfile) => {
+        profile.value = {
+          name: (savedProfile == null ? void 0 : savedProfile.name) || profile.value.name,
+          gender: (savedProfile == null ? void 0 : savedProfile.gender) || profile.value.gender,
+          motto: (savedProfile == null ? void 0 : savedProfile.motto) || profile.value.motto,
+          avatar: (savedProfile == null ? void 0 : savedProfile.avatar) || defaultAvatar
+        };
+      }).catch(() => {
+      });
     };
     common_vendor.onShow(() => {
       loadProfile();

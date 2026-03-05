@@ -1,8 +1,23 @@
 <template>
-	<view class="plant-page">
+	<view class="plant-page" :style="{ paddingTop: `${navMetrics.navBarHeight + 12}px` }">
+		<view class="custom-nav">
+			<view
+				class="custom-nav-inner"
+				:style="{
+					marginTop: `${navMetrics.statusBarHeight}px`,
+					height: `${navMetrics.contentBarHeight}px`
+				}"
+			>
+				<view class="custom-nav-home" @tap="goIndexPage">
+					<up-icon name="home" size="14" color="#33c26d"></up-icon>
+					<text>首页</text>
+				</view>
+				<text class="custom-nav-title">绿植</text>
+			</view>
+		</view>
 		<view class="page-header">
 			<view class="title-row">
-			<view class="page-title">我的绿植花园</view>
+				<view class="page-title">我的绿植花园</view>
 				<view class="add-plant-btn" @tap="onAddPlant">
 					<up-icon name="plus" size="16" color="#33c26d"></up-icon>
 					<text>添加</text>
@@ -23,7 +38,7 @@
 			></up-subsection>
 		</view>
 
-		<up-waterfall :modelValue="filteredPlantList" idKey="id" :addTime="80">
+		<up-waterfall :key="waterfallKey" :modelValue="filteredPlantList" idKey="id" :addTime="80">
 			<template #column="{ colList }">
 				<view
 					v-for="item in colList"
@@ -49,8 +64,9 @@
 						</view>
 						<view class="plant-name-row">
 							<view class="plant-name">{{ item.name }}</view>
-							<up-icon v-if="item.isFavorite" name="star-fill" size="15" color="#f5b301"></up-icon>
+							<up-icon v-if="item.focused" name="star-fill" size="15" color="#f5b301"></up-icon>
 						</view>
+						<text v-if="item.focused && item.focusReason" class="focus-reason">需关注：{{ item.focusReason }}</text>
 					</view>
 				</view>
 			</template>
@@ -60,124 +76,100 @@
 
 <script setup>
 import { computed, ref } from 'vue'
+import { onLoad, onShow, onUnload } from '@dcloudio/uni-app'
+import { listPlants } from '@/api'
+
+const SELECTED_GARDEN_KEY = 'selectedGardenId'
+const SELECTED_PLANT_FILTER_KEY = 'selectedPlantFilter'
+const navMetrics = ref(resolveNavMetrics())
+
+function resolveNavMetrics() {
+	const systemInfo = uni.getSystemInfoSync ? uni.getSystemInfoSync() : {}
+	const statusBarHeight = Number(systemInfo.statusBarHeight || 20)
+	let capsuleHeight = 32
+	let gap = 6
+	try {
+		const menu = uni.getMenuButtonBoundingClientRect ? uni.getMenuButtonBoundingClientRect() : null
+		if (menu && menu.top && menu.height && menu.left) {
+			capsuleHeight = menu.height
+			gap = Math.max(4, menu.top - statusBarHeight)
+		}
+	} catch (e) {}
+	const navBarHeight = Math.max(statusBarHeight + capsuleHeight + gap * 2, statusBarHeight + 44)
+	return {
+		statusBarHeight,
+		navBarHeight,
+		contentBarHeight: navBarHeight - statusBarHeight
+	}
+}
 
 const plantFilterTabs = ['全部', '健康', '异常', '今日待呵护', '关注']
 const activePlantFilterIndex = ref(0)
+const greenPlantList = ref([])
+const waterfallKey = ref(0)
+const scopedGardenId = ref('')
 
-const greenPlantList = ref([
-	{
-		id: 1,
-		name: '常春藤',
-		healthStatus: 'healthy',
-		statusLabel: '健康',
-		days: 28,
-		coverHeight: 210,
-		isFavorite: true,
-		todayCareTasks: ['浇水', '拍照'],
-		image: '/static/flower/857f855fcea81e07d1c315589d5d5a30.jpg'
-	},
-	{
-		id: 2,
-		name: '龟背竹',
-		healthStatus: 'sick',
-		statusLabel: '生病',
-		days: 13,
-		coverHeight: 260,
-		isFavorite: false,
-		todayCareTasks: ['施肥', '除虫害', '测量'],
-		image: '/static/flower/b22cd3cf854015e988176e17dab8a554.jpg'
-	},
-	{
-		id: 3,
-		name: '多肉白牡丹',
-		healthStatus: 'healthy',
-		statusLabel: '健康',
-		days: 41,
-		coverHeight: 190,
-		isFavorite: true,
-		todayCareTasks: [],
-		image: '/static/flower/857f855fcea81e07d1c315589d5d5a30.jpg'
-	},
-	{
-		id: 4,
-		name: '发财树',
-		healthStatus: 'dormant',
-		statusLabel: '休眠',
-		days: 6,
-		coverHeight: 300,
-		isFavorite: false,
-		todayCareTasks: ['修剪', '笔记'],
-		image: '/static/flower/e0c65131708dbcea21fdb5a99a157ac4.jpg'
-	},
-	{
-		id: 5,
-		name: '绿萝',
-		healthStatus: 'healthy',
-		statusLabel: '健康',
-		days: 17,
-		coverHeight: 230,
-		isFavorite: true,
-		todayCareTasks: ['浇水', '施肥', '换盆', '测量'],
-		image: '/static/flower/4c43268b47b31cfab3d434d474ad728c.jpg'
-	},
-	{
-		id: 6,
-		name: '虎皮兰',
-		healthStatus: 'healthy',
-		statusLabel: '健康',
-		days: 52,
-		coverHeight: 270,
-		isFavorite: false,
-		todayCareTasks: [],
-		image: '/static/flower/b22cd3cf854015e988176e17dab8a554.jpg'
-	},
-	{
-		id: 7,
-		name: '琴叶榕',
-		healthStatus: 'dead',
-		statusLabel: '死亡',
-		days: 9,
-		coverHeight: 220,
-		isFavorite: false,
-		todayCareTasks: ['笔记'],
-		image: '/static/flower/4f068b19d4225040f35079b570587bfe.jpg'
-	},
-	{
-		id: 8,
-		name: '吊兰',
-		healthStatus: 'healthy',
-		statusLabel: '健康',
-		days: 35,
-		coverHeight: 250,
-		isFavorite: true,
-		todayCareTasks: ['拍照'],
-		image: '/static/flower/b22cd3cf854015e988176e17dab8a554.jpg'
-	}
-])
+const filterMap = {
+	0: 'all',
+	1: 'healthy',
+	2: 'abnormal',
+	3: 'todo',
+	4: 'focus'
+}
+const reverseFilterMap = {
+	all: 0,
+	healthy: 1,
+	abnormal: 2,
+	todo: 3,
+	focus: 4
+}
 
-const abnormalPlantStatuses = ['sick', 'dormant', 'dead']
-const filteredPlantList = computed(() => {
-	switch (activePlantFilterIndex.value) {
-		case 1:
-			return greenPlantList.value.filter((item) => item.healthStatus === 'healthy')
-		case 2:
-			return greenPlantList.value.filter((item) => abnormalPlantStatuses.includes(item.healthStatus))
-		case 3:
-			return greenPlantList.value.filter((item) => item.todayCareTasks.length > 0)
-		case 4:
-			return greenPlantList.value.filter((item) => item.isFavorite)
-		default:
-			return greenPlantList.value
-	}
+const readSelectedGardenId = () => `${uni.getStorageSync(SELECTED_GARDEN_KEY) || ''}`.trim()
+const readSelectedPlantFilter = () => `${uni.getStorageSync(SELECTED_PLANT_FILTER_KEY) || ''}`.trim().toLowerCase()
+
+const toCard = (item, index) => ({
+	...item,
+	coverHeight: 190 + (index % 4) * 20,
+	focused: !!item.focused,
+	focusReason: item.focusReason || '',
+	todayCareTasks: item.todayCareTasks || [],
+	image: item.image || '/static/flower/857f855fcea81e07d1c315589d5d5a30.jpg',
+	statusLabel: item.statusLabel || '健康',
+	healthStatus: item.healthStatus || 'healthy',
+	days: item.days || 1
 })
+
+const filteredPlantList = computed(() => greenPlantList.value)
+
+const loadPlants = () => {
+	const filter = filterMap[activePlantFilterIndex.value] || 'all'
+	listPlants(filter, scopedGardenId.value || undefined)
+		.then((list) => {
+			greenPlantList.value = []
+			greenPlantList.value = (list || []).map((item, index) => toCard(item, index))
+			waterfallKey.value += 1
+		})
+		.catch((err) => {
+			uni.showToast({
+				title: err?.message || '加载绿植失败',
+				icon: 'none'
+			})
+		})
+}
 
 const onPlantFilterChange = (index) => {
 	activePlantFilterIndex.value = index
+	loadPlants()
 }
 
 const onPlantCardClick = (item) => {
 	uni.navigateTo({
 		url: `/pages/plant/detail?id=${item.id}`,
+		events: {
+			plantDeleted: (payload) => {
+				handlePlantDeleted(payload)
+			}
+		},
 		fail: (err) => {
 			uni.showToast({
 				title: err?.errMsg || '页面跳转失败',
@@ -198,6 +190,59 @@ const onAddPlant = () => {
 		}
 	})
 }
+
+const goIndexPage = () => {
+	uni.reLaunch({
+		url: '/pages/index/index',
+		fail: () => {
+			uni.redirectTo({
+				url: '/pages/index/index'
+			})
+		}
+	})
+}
+
+const handlePlantDeleted = (payload) => {
+	const deletedId = Number(payload?.id || 0)
+	if (deletedId) {
+		greenPlantList.value = greenPlantList.value.filter((item) => Number(item.id) !== deletedId)
+		waterfallKey.value += 1
+	}
+	loadPlants()
+}
+
+onShow(() => {
+	uni.$off('plant:deleted', handlePlantDeleted)
+	uni.$on('plant:deleted', handlePlantDeleted)
+	const selectedGardenId = readSelectedGardenId()
+	if (selectedGardenId || !scopedGardenId.value) {
+		scopedGardenId.value = selectedGardenId
+	}
+	const selectedFilter = readSelectedPlantFilter()
+	if (reverseFilterMap[selectedFilter] !== undefined) {
+		activePlantFilterIndex.value = reverseFilterMap[selectedFilter]
+		uni.removeStorageSync(SELECTED_PLANT_FILTER_KEY)
+	}
+	loadPlants()
+})
+
+onLoad((query) => {
+	const filterKey = `${query?.filter || ''}`.toLowerCase()
+	if (reverseFilterMap[filterKey] !== undefined) {
+		activePlantFilterIndex.value = reverseFilterMap[filterKey]
+	}
+	const gardenId = `${query?.gardenId || ''}`.trim()
+	if (gardenId) {
+		scopedGardenId.value = gardenId
+		uni.setStorageSync(SELECTED_GARDEN_KEY, gardenId)
+	} else {
+		scopedGardenId.value = readSelectedGardenId()
+	}
+})
+
+onUnload(() => {
+	uni.$off('plant:deleted', handlePlantDeleted)
+})
 </script>
 
 <style scoped lang="scss">
@@ -205,6 +250,51 @@ const onAddPlant = () => {
 		min-height: 100vh;
 		padding: 24rpx;
 		background-color: #f6fcf8;
+	}
+
+	.custom-nav {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		z-index: 120;
+		background: #f6fcf8;
+	}
+
+	.custom-nav-inner {
+		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 100%;
+		box-sizing: border-box;
+	}
+
+	.custom-nav-home {
+		position: absolute;
+		left: 24rpx;
+		top: 50%;
+		transform: translateY(-50%);
+		display: flex;
+		align-items: center;
+		gap: 6rpx;
+		padding: 6rpx 12rpx;
+		height: 44rpx;
+		border-radius: 999rpx;
+		background: #ffffff;
+		border: 1px solid #d9d9d9;
+		font-size: 20rpx;
+		font-weight: 600;
+		color: #1f1f1f;
+		box-sizing: border-box;
+	}
+
+	.custom-nav-title {
+		font-size: 32rpx;
+		line-height: 44rpx;
+		font-weight: 600;
+		color: #1f1f1f;
+		text-align: center;
 	}
 
 	.page-header {
@@ -335,6 +425,14 @@ const onAddPlant = () => {
 		justify-content: space-between;
 		gap: 8rpx;
 		margin-top: 6rpx;
+	}
+
+	.focus-reason {
+		display: block;
+		margin-top: 6rpx;
+		font-size: 22rpx;
+		color: #8a5f00;
+		line-height: 1.4;
 	}
 
 	.care-task-list {

@@ -51,10 +51,10 @@
 <script setup>
 	import { computed, ref } from 'vue'
 	import { onShow } from '@dcloudio/uni-app'
+	import { getUserProfile } from '@/api'
 
 	const iconColor = ref("#33c26d")
 	const bgColor = ref("#F8F8F8")
-	const profileStorageKey = 'userProfile'
 	const defaultAvatar = 'https://cdn.uviewui.com/uview/example/button.png'
 
 	const profile = ref({
@@ -67,15 +67,16 @@
 	const genderIcon = computed(() => (profile.value.gender === 'female' ? 'woman' : 'man'))
 
 	const loadProfile = () => {
-		const savedProfile = uni.getStorageSync(profileStorageKey)
-		if (!savedProfile || typeof savedProfile !== 'object') return
-
-		profile.value = {
-			name: savedProfile.name || profile.value.name,
-			gender: savedProfile.gender || profile.value.gender,
-			motto: savedProfile.motto || profile.value.motto,
-			avatar: savedProfile.avatar || defaultAvatar
-		}
+		getUserProfile()
+			.then((savedProfile) => {
+				profile.value = {
+					name: savedProfile?.name || profile.value.name,
+					gender: savedProfile?.gender || profile.value.gender,
+					motto: savedProfile?.motto || profile.value.motto,
+					avatar: savedProfile?.avatar || defaultAvatar
+				}
+			})
+			.catch(() => {})
 	}
 
 	onShow(() => {

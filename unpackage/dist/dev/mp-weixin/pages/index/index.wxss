@@ -28,6 +28,11 @@
   padding: 20rpx 24rpx 24rpx;
   background: #f6fcf8;
 }
+.garden-list.data-v-1cf27b2a {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
 .card-head.data-v-1cf27b2a {
   display: flex;
   align-items: center;
@@ -49,10 +54,19 @@
   font-size: 30rpx;
   font-weight: 700;
   color: #1f7a44;
-  max-width: 250rpx;
+  max-width: 210rpx;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+.default-badge.data-v-1cf27b2a {
+  padding: 4rpx 10rpx;
+  border-radius: 999rpx;
+  background: #eaf9f0;
+  border: 1px solid #d7efdf;
+  font-size: 20rpx;
+  color: #2f8f56;
+  flex-shrink: 0;
 }
 .action-btn.data-v-1cf27b2a {
   display: inline-flex;
@@ -134,4 +148,10 @@
   background: #33c26d;
   box-shadow: 0 12rpx 26rpx rgba(51, 194, 109, 0.35);
   z-index: 99;
+}
+.empty-garden.data-v-1cf27b2a {
+  margin-top: 40rpx;
+  font-size: 24rpx;
+  color: #8ea096;
+  text-align: center;
 }

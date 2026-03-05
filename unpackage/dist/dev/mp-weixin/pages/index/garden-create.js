@@ -1,5 +1,6 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
+const api_index = require("../../api/index.js");
 if (!Array) {
   const _easycom_up_icon2 = common_vendor.resolveComponent("up-icon");
   const _easycom_up_form_item2 = common_vendor.resolveComponent("up-form-item");
@@ -22,13 +23,25 @@ const _easycom_up_datetime_picker = () => "../../uni_modules/uview-plus/componen
 if (!Math) {
   (_easycom_up_icon + _easycom_up_form_item + _easycom_up_input + _easycom_up_textarea + _easycom_up_form + _easycom_up_button + _easycom_up_action_sheet + _easycom_up_datetime_picker)();
 }
-const gardenStorageKey = "gardenInfo";
 const _sfc_main = {
   __name: "garden-create",
   setup(__props) {
+    const formatDate = (timestamp) => {
+      const date = new Date(timestamp);
+      const year = date.getFullYear();
+      const month = `${date.getMonth() + 1}`.padStart(2, "0");
+      const day = `${date.getDate()}`.padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+    const getTodayStartTimestamp = () => {
+      const now = /* @__PURE__ */ new Date();
+      now.setHours(0, 0, 0, 0);
+      return now.getTime();
+    };
+    const todayTimestamp = getTodayStartTimestamp();
     const form = common_vendor.reactive({
       title: "",
-      subTitle: "",
+      subTitle: formatDate(todayTimestamp),
       thumb: "",
       image: "",
       description: ""
@@ -40,7 +53,8 @@ const _sfc_main = {
       { name: "从相册选择", sourceType: ["album"] }
     ];
     const showDatePicker = common_vendor.ref(false);
-    const datePickerValue = common_vendor.ref(Date.now());
+    const datePickerValue = common_vendor.ref(todayTimestamp);
+    const datePickerKey = common_vendor.ref(0);
     const openImageSourceSheet = (field) => {
       imageTargetField.value = field;
       showImageSourceSheet.value = true;
@@ -61,14 +75,9 @@ const _sfc_main = {
       });
     };
     const openDatePicker = () => {
+      datePickerValue.value = getTodayStartTimestamp();
+      datePickerKey.value += 1;
       showDatePicker.value = true;
-    };
-    const formatDate = (timestamp) => {
-      const date = new Date(timestamp);
-      const year = date.getFullYear();
-      const month = `${date.getMonth() + 1}`.padStart(2, "0");
-      const day = `${date.getDate()}`.padStart(2, "0");
-      return `${year}-${month}-${day}`;
     };
     const onDateConfirm = (payload) => {
       const ts = (payload == null ? void 0 : payload.value) || Date.now();
@@ -91,20 +100,26 @@ const _sfc_main = {
         });
         return;
       }
-      common_vendor.index.setStorageSync(gardenStorageKey, {
-        title: form.title.trim(),
-        subTitle: form.subTitle,
-        thumb: form.thumb,
-        image: form.image,
+      api_index.createGarden({
+        name: form.title.trim(),
+        establishedDate: form.subTitle,
+        thumbUrl: form.thumb,
+        coverUrl: form.image,
         description: form.description.trim()
+      }).then(() => {
+        common_vendor.index.showToast({
+          title: "创建成功",
+          icon: "success"
+        });
+        setTimeout(() => {
+          common_vendor.index.navigateBack();
+        }, 400);
+      }).catch((err) => {
+        common_vendor.index.showToast({
+          title: (err == null ? void 0 : err.message) || "创建失败",
+          icon: "none"
+        });
       });
-      common_vendor.index.showToast({
-        title: "创建成功",
-        icon: "success"
-      });
-      setTimeout(() => {
-        common_vendor.index.navigateBack();
-      }, 400);
     };
     return (_ctx, _cache) => {
       return common_vendor.e({
@@ -189,10 +204,11 @@ const _sfc_main = {
           actions: imageSourceActions,
           cancelText: "取消"
         }),
-        C: common_vendor.o(onDateConfirm),
-        D: common_vendor.o(($event) => showDatePicker.value = false),
+        C: datePickerKey.value,
+        D: common_vendor.o(onDateConfirm),
         E: common_vendor.o(($event) => showDatePicker.value = false),
-        F: common_vendor.p({
+        F: common_vendor.o(($event) => showDatePicker.value = false),
+        G: common_vendor.p({
           show: showDatePicker.value,
           value: datePickerValue.value,
           mode: "date"

@@ -47,6 +47,7 @@
 
 <script setup>
 import { reactive } from 'vue'
+import { submitFeedbackApi } from '@/api'
 
 const form = reactive({
 	content: '',
@@ -62,13 +63,24 @@ const submitFeedback = () => {
 		return
 	}
 
-	uni.showToast({
-		title: '感谢反馈，我们会持续优化',
-		icon: 'success'
+	submitFeedbackApi({
+		content: form.content.trim(),
+		contact: form.contact.trim()
 	})
-
-	form.content = ''
-	form.contact = ''
+		.then(() => {
+			uni.showToast({
+				title: '感谢反馈，我们会持续优化',
+				icon: 'success'
+			})
+			form.content = ''
+			form.contact = ''
+		})
+		.catch((err) => {
+			uni.showToast({
+				title: err?.message || '提交失败',
+				icon: 'none'
+			})
+		})
 }
 </script>
 

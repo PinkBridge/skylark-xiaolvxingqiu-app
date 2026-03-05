@@ -1,5 +1,6 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
+const api_index = require("../../api/index.js");
 if (!Array) {
   const _easycom_up_icon2 = common_vendor.resolveComponent("up-icon");
   const _easycom_up_subsection2 = common_vendor.resolveComponent("up-subsection");
@@ -12,122 +13,90 @@ const _easycom_up_waterfall = () => "../../uni_modules/uview-plus/components/u-w
 if (!Math) {
   (_easycom_up_icon + _easycom_up_subsection + _easycom_up_waterfall)();
 }
+const SELECTED_GARDEN_KEY = "selectedGardenId";
+const SELECTED_PLANT_FILTER_KEY = "selectedPlantFilter";
 const _sfc_main = {
   __name: "plant",
   setup(__props) {
+    const navMetrics = common_vendor.ref(resolveNavMetrics());
+    function resolveNavMetrics() {
+      const systemInfo = common_vendor.index.getSystemInfoSync ? common_vendor.index.getSystemInfoSync() : {};
+      const statusBarHeight = Number(systemInfo.statusBarHeight || 20);
+      let capsuleHeight = 32;
+      let gap = 6;
+      try {
+        const menu = common_vendor.index.getMenuButtonBoundingClientRect ? common_vendor.index.getMenuButtonBoundingClientRect() : null;
+        if (menu && menu.top && menu.height && menu.left) {
+          capsuleHeight = menu.height;
+          gap = Math.max(4, menu.top - statusBarHeight);
+        }
+      } catch (e) {
+      }
+      const navBarHeight = Math.max(statusBarHeight + capsuleHeight + gap * 2, statusBarHeight + 44);
+      return {
+        statusBarHeight,
+        navBarHeight,
+        contentBarHeight: navBarHeight - statusBarHeight
+      };
+    }
     const plantFilterTabs = ["全部", "健康", "异常", "今日待呵护", "关注"];
     const activePlantFilterIndex = common_vendor.ref(0);
-    const greenPlantList = common_vendor.ref([
-      {
-        id: 1,
-        name: "常春藤",
-        healthStatus: "healthy",
-        statusLabel: "健康",
-        days: 28,
-        coverHeight: 210,
-        isFavorite: true,
-        todayCareTasks: ["浇水", "拍照"],
-        image: "/static/flower/857f855fcea81e07d1c315589d5d5a30.jpg"
-      },
-      {
-        id: 2,
-        name: "龟背竹",
-        healthStatus: "sick",
-        statusLabel: "生病",
-        days: 13,
-        coverHeight: 260,
-        isFavorite: false,
-        todayCareTasks: ["施肥", "除虫害", "测量"],
-        image: "/static/flower/b22cd3cf854015e988176e17dab8a554.jpg"
-      },
-      {
-        id: 3,
-        name: "多肉白牡丹",
-        healthStatus: "healthy",
-        statusLabel: "健康",
-        days: 41,
-        coverHeight: 190,
-        isFavorite: true,
-        todayCareTasks: [],
-        image: "/static/flower/857f855fcea81e07d1c315589d5d5a30.jpg"
-      },
-      {
-        id: 4,
-        name: "发财树",
-        healthStatus: "dormant",
-        statusLabel: "休眠",
-        days: 6,
-        coverHeight: 300,
-        isFavorite: false,
-        todayCareTasks: ["修剪", "笔记"],
-        image: "/static/flower/e0c65131708dbcea21fdb5a99a157ac4.jpg"
-      },
-      {
-        id: 5,
-        name: "绿萝",
-        healthStatus: "healthy",
-        statusLabel: "健康",
-        days: 17,
-        coverHeight: 230,
-        isFavorite: true,
-        todayCareTasks: ["浇水", "施肥", "换盆", "测量"],
-        image: "/static/flower/4c43268b47b31cfab3d434d474ad728c.jpg"
-      },
-      {
-        id: 6,
-        name: "虎皮兰",
-        healthStatus: "healthy",
-        statusLabel: "健康",
-        days: 52,
-        coverHeight: 270,
-        isFavorite: false,
-        todayCareTasks: [],
-        image: "/static/flower/b22cd3cf854015e988176e17dab8a554.jpg"
-      },
-      {
-        id: 7,
-        name: "琴叶榕",
-        healthStatus: "dead",
-        statusLabel: "死亡",
-        days: 9,
-        coverHeight: 220,
-        isFavorite: false,
-        todayCareTasks: ["笔记"],
-        image: "/static/flower/4f068b19d4225040f35079b570587bfe.jpg"
-      },
-      {
-        id: 8,
-        name: "吊兰",
-        healthStatus: "healthy",
-        statusLabel: "健康",
-        days: 35,
-        coverHeight: 250,
-        isFavorite: true,
-        todayCareTasks: ["拍照"],
-        image: "/static/flower/b22cd3cf854015e988176e17dab8a554.jpg"
-      }
-    ]);
-    const abnormalPlantStatuses = ["sick", "dormant", "dead"];
-    const filteredPlantList = common_vendor.computed(() => {
-      switch (activePlantFilterIndex.value) {
-        case 1:
-          return greenPlantList.value.filter((item) => item.healthStatus === "healthy");
-        case 2:
-          return greenPlantList.value.filter((item) => abnormalPlantStatuses.includes(item.healthStatus));
-        case 3:
-          return greenPlantList.value.filter((item) => item.todayCareTasks.length > 0);
-        case 4:
-          return greenPlantList.value.filter((item) => item.isFavorite);
-        default:
-          return greenPlantList.value;
-      }
+    const greenPlantList = common_vendor.ref([]);
+    const waterfallKey = common_vendor.ref(0);
+    const scopedGardenId = common_vendor.ref("");
+    const filterMap = {
+      0: "all",
+      1: "healthy",
+      2: "abnormal",
+      3: "todo",
+      4: "focus"
+    };
+    const reverseFilterMap = {
+      all: 0,
+      healthy: 1,
+      abnormal: 2,
+      todo: 3,
+      focus: 4
+    };
+    const readSelectedGardenId = () => `${common_vendor.index.getStorageSync(SELECTED_GARDEN_KEY) || ""}`.trim();
+    const readSelectedPlantFilter = () => `${common_vendor.index.getStorageSync(SELECTED_PLANT_FILTER_KEY) || ""}`.trim().toLowerCase();
+    const toCard = (item, index) => ({
+      ...item,
+      coverHeight: 190 + index % 4 * 20,
+      focused: !!item.focused,
+      focusReason: item.focusReason || "",
+      todayCareTasks: item.todayCareTasks || [],
+      image: item.image || "/static/flower/857f855fcea81e07d1c315589d5d5a30.jpg",
+      statusLabel: item.statusLabel || "健康",
+      healthStatus: item.healthStatus || "healthy",
+      days: item.days || 1
     });
+    const filteredPlantList = common_vendor.computed(() => greenPlantList.value);
+    const loadPlants = () => {
+      const filter = filterMap[activePlantFilterIndex.value] || "all";
+      api_index.listPlants(filter, scopedGardenId.value || void 0).then((list) => {
+        greenPlantList.value = [];
+        greenPlantList.value = (list || []).map((item, index) => toCard(item, index));
+        waterfallKey.value += 1;
+      }).catch((err) => {
+        common_vendor.index.showToast({
+          title: (err == null ? void 0 : err.message) || "加载绿植失败",
+          icon: "none"
+        });
+      });
+    };
     const onPlantFilterChange = (index) => {
       activePlantFilterIndex.value = index;
+      loadPlants();
     };
     const onPlantCardClick = (item) => {
       common_vendor.index.navigateTo({
         url: `/pages/plant/detail?id=${item.id}`,
+        events: {
+          plantDeleted: (payload) => {
+            handlePlantDeleted(payload);
+          }
+        },
         fail: (err) => {
           common_vendor.index.showToast({
             title: (err == null ? void 0 : err.errMsg) || "页面跳转失败",
@@ -147,16 +116,72 @@ const _sfc_main = {
         }
       });
     };
+    const goIndexPage = () => {
+      common_vendor.index.reLaunch({
+        url: "/pages/index/index",
+        fail: () => {
+          common_vendor.index.redirectTo({
+            url: "/pages/index/index"
+          });
+        }
+      });
+    };
+    const handlePlantDeleted = (payload) => {
+      const deletedId = Number((payload == null ? void 0 : payload.id) || 0);
+      if (deletedId) {
+        greenPlantList.value = greenPlantList.value.filter((item) => Number(item.id) !== deletedId);
+        waterfallKey.value += 1;
+      }
+      loadPlants();
+    };
+    common_vendor.onShow(() => {
+      common_vendor.index.$off("plant:deleted", handlePlantDeleted);
+      common_vendor.index.$on("plant:deleted", handlePlantDeleted);
+      const selectedGardenId = readSelectedGardenId();
+      if (selectedGardenId || !scopedGardenId.value) {
+        scopedGardenId.value = selectedGardenId;
+      }
+      const selectedFilter = readSelectedPlantFilter();
+      if (reverseFilterMap[selectedFilter] !== void 0) {
+        activePlantFilterIndex.value = reverseFilterMap[selectedFilter];
+        common_vendor.index.removeStorageSync(SELECTED_PLANT_FILTER_KEY);
+      }
+      loadPlants();
+    });
+    common_vendor.onLoad((query) => {
+      const filterKey = `${(query == null ? void 0 : query.filter) || ""}`.toLowerCase();
+      if (reverseFilterMap[filterKey] !== void 0) {
+        activePlantFilterIndex.value = reverseFilterMap[filterKey];
+      }
+      const gardenId = `${(query == null ? void 0 : query.gardenId) || ""}`.trim();
+      if (gardenId) {
+        scopedGardenId.value = gardenId;
+        common_vendor.index.setStorageSync(SELECTED_GARDEN_KEY, gardenId);
+      } else {
+        scopedGardenId.value = readSelectedGardenId();
+      }
+    });
+    common_vendor.onUnload(() => {
+      common_vendor.index.$off("plant:deleted", handlePlantDeleted);
+    });
     return (_ctx, _cache) => {
       return {
         a: common_vendor.p({
+          name: "home",
+          size: "14",
+          color: "#33c26d"
+        }),
+        b: common_vendor.o(goIndexPage),
+        c: `${navMetrics.value.statusBarHeight}px`,
+        d: `${navMetrics.value.contentBarHeight}px`,
+        e: common_vendor.p({
           name: "plus",
           size: "16",
           color: "#33c26d"
         }),
-        b: common_vendor.o(onAddPlant),
-        c: common_vendor.o(onPlantFilterChange),
-        d: common_vendor.p({
+        f: common_vendor.o(onAddPlant),
+        g: common_vendor.o(onPlantFilterChange),
+        h: common_vendor.p({
           list: plantFilterTabs,
           current: activePlantFilterIndex.value,
           mode: "button",
@@ -164,7 +189,7 @@ const _sfc_main = {
           inactiveColor: "#5a6b60",
           bgColor: "#eaf9f0"
         }),
-        e: common_vendor.w(({
+        i: common_vendor.w(({
           colList
         }, s0, i0) => {
           return {
@@ -188,17 +213,21 @@ const _sfc_main = {
                 i: common_vendor.t(item.todayCareTasks.length - 3)
               } : {}) : {}, {
                 j: common_vendor.t(item.name),
-                k: item.isFavorite
-              }, item.isFavorite ? {
-                l: "beaff5d6-3-" + i0 + "-" + i1 + ",beaff5d6-2",
+                k: item.focused
+              }, item.focused ? {
+                l: "beaff5d6-4-" + i0 + "-" + i1 + ",beaff5d6-3",
                 m: common_vendor.p({
                   name: "star-fill",
                   size: "15",
                   color: "#f5b301"
                 })
               } : {}, {
-                n: item.id,
-                o: common_vendor.o(($event) => onPlantCardClick(item), item.id)
+                n: item.focused && item.focusReason
+              }, item.focused && item.focusReason ? {
+                o: common_vendor.t(item.focusReason)
+              } : {}, {
+                p: item.id,
+                q: common_vendor.o(($event) => onPlantCardClick(item), item.id)
               });
             }),
             b: i0,
@@ -206,14 +235,16 @@ const _sfc_main = {
           };
         }, {
           name: "column",
-          path: "e",
-          vueId: "beaff5d6-2"
+          path: "i",
+          vueId: "beaff5d6-3"
         }),
-        f: common_vendor.p({
+        j: waterfallKey.value,
+        k: common_vendor.p({
           modelValue: filteredPlantList.value,
           idKey: "id",
           addTime: 80
-        })
+        }),
+        l: `${navMetrics.value.navBarHeight + 12}px`
       };
     };
   }

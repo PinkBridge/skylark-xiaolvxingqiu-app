@@ -1,5 +1,6 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
+const api_index = require("../../api/index.js");
 if (!Array) {
   const _easycom_up_icon2 = common_vendor.resolveComponent("up-icon");
   const _easycom_up_form_item2 = common_vendor.resolveComponent("up-form-item");
@@ -22,7 +23,6 @@ const _easycom_up_datetime_picker = () => "../../uni_modules/uview-plus/componen
 if (!Math) {
   (_easycom_up_icon + _easycom_up_form_item + _easycom_up_input + _easycom_up_subsection + _easycom_up_textarea + _easycom_up_form + _easycom_up_button + _easycom_up_datetime_picker)();
 }
-const profileStorageKey = "userProfile";
 const defaultAvatar = "https://cdn.uviewui.com/uview/example/button.png";
 const _sfc_main = {
   __name: "profile",
@@ -40,16 +40,16 @@ const _sfc_main = {
     const showDatePicker = common_vendor.ref(false);
     const datePickerValue = common_vendor.ref(Date.now());
     const loadProfile = () => {
-      const savedProfile = common_vendor.index.getStorageSync(profileStorageKey);
-      if (!savedProfile || typeof savedProfile !== "object")
-        return;
-      form.avatar = savedProfile.avatar || defaultAvatar;
-      form.name = savedProfile.name || "";
-      form.gender = savedProfile.gender || "male";
-      form.birthday = savedProfile.birthday || "";
-      form.motto = savedProfile.motto || form.motto;
-      const index = genderValues.findIndex((item) => item === form.gender);
-      genderIndex.value = index > -1 ? index : 0;
+      api_index.getUserProfile().then((savedProfile) => {
+        form.avatar = (savedProfile == null ? void 0 : savedProfile.avatar) || defaultAvatar;
+        form.name = (savedProfile == null ? void 0 : savedProfile.name) || "";
+        form.gender = (savedProfile == null ? void 0 : savedProfile.gender) || "male";
+        form.birthday = (savedProfile == null ? void 0 : savedProfile.birthday) || "";
+        form.motto = (savedProfile == null ? void 0 : savedProfile.motto) || form.motto;
+        const index = genderValues.findIndex((item) => item === form.gender);
+        genderIndex.value = index > -1 ? index : 0;
+      }).catch(() => {
+      });
     };
     loadProfile();
     const chooseAvatar = () => {
@@ -91,20 +91,26 @@ const _sfc_main = {
         });
         return;
       }
-      common_vendor.index.setStorageSync(profileStorageKey, {
+      api_index.updateUserProfile({
         avatar: form.avatar || defaultAvatar,
         name: form.name.trim(),
         gender: form.gender,
         birthday: form.birthday,
         motto: form.motto.trim() || "每一份生命都值得尊重和呵护!"
+      }).then(() => {
+        common_vendor.index.showToast({
+          title: "保存成功",
+          icon: "success"
+        });
+        setTimeout(() => {
+          common_vendor.index.navigateBack();
+        }, 400);
+      }).catch((err) => {
+        common_vendor.index.showToast({
+          title: (err == null ? void 0 : err.message) || "保存失败",
+          icon: "none"
+        });
       });
-      common_vendor.index.showToast({
-        title: "保存成功",
-        icon: "success"
-      });
-      setTimeout(() => {
-        common_vendor.index.navigateBack();
-      }, 400);
     };
     return (_ctx, _cache) => {
       return {

@@ -98,6 +98,7 @@
 		></up-action-sheet>
 
 		<up-datetime-picker
+			:key="datePickerKey"
 			:show="showDatePicker"
 			:value="datePickerValue"
 			mode="date"
@@ -110,12 +111,27 @@
 
 <script setup>
 import { reactive, ref } from 'vue'
+import { createGarden } from '@/api'
 
-const gardenStorageKey = 'gardenInfo'
+const formatDate = (timestamp) => {
+	const date = new Date(timestamp)
+	const year = date.getFullYear()
+	const month = `${date.getMonth() + 1}`.padStart(2, '0')
+	const day = `${date.getDate()}`.padStart(2, '0')
+	return `${year}-${month}-${day}`
+}
+
+const getTodayStartTimestamp = () => {
+	const now = new Date()
+	now.setHours(0, 0, 0, 0)
+	return now.getTime()
+}
+
+const todayTimestamp = getTodayStartTimestamp()
 
 const form = reactive({
 	title: '',
-	subTitle: '',
+	subTitle: formatDate(todayTimestamp),
 	thumb: '',
 	image: '',
 	description: ''
@@ -129,7 +145,8 @@ const imageSourceActions = [
 ]
 
 const showDatePicker = ref(false)
-const datePickerValue = ref(Date.now())
+const datePickerValue = ref(todayTimestamp)
+const datePickerKey = ref(0)
 
 const openImageSourceSheet = (field) => {
 	imageTargetField.value = field
@@ -151,15 +168,9 @@ const onImageSourceSelect = (action) => {
 }
 
 const openDatePicker = () => {
+	datePickerValue.value = getTodayStartTimestamp()
+	datePickerKey.value += 1
 	showDatePicker.value = true
-}
-
-const formatDate = (timestamp) => {
-	const date = new Date(timestamp)
-	const year = date.getFullYear()
-	const month = `${date.getMonth() + 1}`.padStart(2, '0')
-	const day = `${date.getDate()}`.padStart(2, '0')
-	return `${year}-${month}-${day}`
 }
 
 const onDateConfirm = (payload) => {
@@ -186,22 +197,28 @@ const saveGardenInfo = () => {
 		return
 	}
 
-	uni.setStorageSync(gardenStorageKey, {
-		title: form.title.trim(),
-		subTitle: form.subTitle,
-		thumb: form.thumb,
-		image: form.image,
+	createGarden({
+		name: form.title.trim(),
+		establishedDate: form.subTitle,
+		thumbUrl: form.thumb,
+		coverUrl: form.image,
 		description: form.description.trim()
 	})
-
-	uni.showToast({
-		title: '创建成功',
-		icon: 'success'
-	})
-
-	setTimeout(() => {
-		uni.navigateBack()
-	}, 400)
+		.then(() => {
+			uni.showToast({
+				title: '创建成功',
+				icon: 'success'
+			})
+			setTimeout(() => {
+				uni.navigateBack()
+			}, 400)
+		})
+		.catch((err) => {
+			uni.showToast({
+				title: err?.message || '创建失败',
+				icon: 'none'
+			})
+		})
 }
 </script>
 

@@ -1,5 +1,6 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
+const api_index = require("../../api/index.js");
 if (!Array) {
   const _easycom_up_icon2 = common_vendor.resolveComponent("up-icon");
   const _easycom_up_card2 = common_vendor.resolveComponent("up-card");
@@ -12,130 +13,39 @@ const _easycom_up_popup = () => "../../uni_modules/uview-plus/components/u-popup
 if (!Math) {
   (_easycom_up_icon + _easycom_up_card + _easycom_up_popup)();
 }
+const SELECTED_GARDEN_KEY = "selectedGardenId";
 const _sfc_main = {
   __name: "calendar",
   setup(__props) {
+    const navMetrics = common_vendor.ref(resolveNavMetrics());
+    function resolveNavMetrics() {
+      const systemInfo = common_vendor.index.getSystemInfoSync ? common_vendor.index.getSystemInfoSync() : {};
+      const statusBarHeight = Number(systemInfo.statusBarHeight || 20);
+      let capsuleHeight = 32;
+      let gap = 6;
+      try {
+        const menu = common_vendor.index.getMenuButtonBoundingClientRect ? common_vendor.index.getMenuButtonBoundingClientRect() : null;
+        if (menu && menu.top && menu.height && menu.left) {
+          capsuleHeight = menu.height;
+          gap = Math.max(4, menu.top - statusBarHeight);
+        }
+      } catch (e) {
+      }
+      const navBarHeight = Math.max(statusBarHeight + capsuleHeight + gap * 2, statusBarHeight + 44);
+      return {
+        statusBarHeight,
+        navBarHeight,
+        contentBarHeight: navBarHeight - statusBarHeight
+      };
+    }
     const weekList = ["日", "一", "二", "三", "四", "五", "六"];
     const today = /* @__PURE__ */ new Date();
     const todayKey = formatDate(today);
     const selectedDate = common_vendor.ref(todayKey);
     const currentMonthDate = common_vendor.ref(new Date(today.getFullYear(), today.getMonth(), 1));
-    const careActivityList = common_vendor.ref([
-      {
-        id: "a1",
-        date: "2026-03-02",
-        time: "08:30",
-        name: "浇水",
-        plantName: "常春藤",
-        completed: true,
-        icon: "/static/icon/water.png",
-        record: {
-          amount: "180",
-          method: "喷雾",
-          photo: "/static/flower/flower-1.jpg",
-          note: "表土偏干，补水后叶片恢复挺立"
-        }
-      },
-      {
-        id: "a2",
-        date: "2026-03-02",
-        time: "09:20",
-        name: "施肥",
-        plantName: "龟背竹",
-        completed: true,
-        icon: "/static/icon/fertilize.png",
-        record: {
-          material: "花多多2号",
-          photo: "/static/flower/flower-2.jpg",
-          note: "按1:1000稀释后浇施"
-        }
-      },
-      {
-        id: "a3",
-        date: "2026-03-02",
-        time: "10:10",
-        name: "修剪",
-        plantName: "发财树",
-        completed: true,
-        icon: "/static/icon/prune.png",
-        record: {
-          part: "黄叶",
-          photo: "/static/flower/flower-3.jpg",
-          note: "去除老叶，保留新芽"
-        }
-      },
-      {
-        id: "a4",
-        date: "2026-03-02",
-        time: "11:00",
-        name: "换盆",
-        plantName: "多肉白牡丹",
-        completed: true,
-        icon: "/static/icon/repot.png",
-        record: {
-          potSize: "14cm",
-          photo: "/static/flower/flower-4.jpg",
-          note: "新盆透气性更好，底部垫陶粒"
-        }
-      },
-      {
-        id: "a5",
-        date: "2026-03-02",
-        time: "13:30",
-        name: "病虫害",
-        plantName: "吊兰",
-        completed: true,
-        icon: "/static/icon/pest.png",
-        record: {
-          type: "蚜虫",
-          treatment: "肥皂水",
-          photo: "/static/flower/flower-5.jpg",
-          note: "喷洒后擦拭叶背，观察48小时"
-        }
-      },
-      {
-        id: "a6",
-        date: "2026-03-02",
-        time: "15:00",
-        name: "测量",
-        plantName: "虎皮兰",
-        completed: true,
-        icon: "/static/icon/measure.png",
-        record: {
-          weight: "2.6kg",
-          height: "48cm",
-          photo: "/static/flower/flower-6.jpg",
-          note: "较上周增高约1cm"
-        }
-      },
-      {
-        id: "a7",
-        date: "2026-03-02",
-        time: "17:10",
-        name: "拍照",
-        plantName: "绿萝",
-        completed: true,
-        icon: "/static/icon/photo.png",
-        record: {
-          photo: "/static/flower/flower-7.jpg",
-          note: "叶色饱满，记录当前长势"
-        }
-      },
-      {
-        id: "a8",
-        date: "2026-03-02",
-        time: "18:20",
-        name: "松土",
-        plantName: "琴叶榕",
-        completed: true,
-        icon: "/static/icon/loosen.png",
-        record: {
-          photo: "/static/flower/flower-8.jpg",
-          note: "浅层松土，改善根部透气"
-        }
-      },
-      { id: "a9", date: "2026-03-03", time: "10:00", name: "浇水", plantName: "常春藤", completed: false, icon: "/static/icon/water.png" }
-    ]);
+    const careActivityList = common_vendor.ref([]);
+    const selectedGardenId = common_vendor.ref("");
+    const readSelectedGardenId = () => `${common_vendor.index.getStorageSync(SELECTED_GARDEN_KEY) || ""}`.trim();
     const monthLabel = common_vendor.computed(() => {
       const year = currentMonthDate.value.getFullYear();
       const month = currentMonthDate.value.getMonth() + 1;
@@ -165,9 +75,9 @@ const _sfc_main = {
       }
       return list;
     });
-    const selectedActivities = common_vendor.computed(
-      () => careActivityList.value.filter((item) => item.date === selectedDate.value).sort((a, b) => a.time.localeCompare(b.time))
-    );
+    const selectedActivities = common_vendor.computed(() => {
+      return careActivityList.value.filter((item) => item.date === selectedDate.value).sort((a, b) => (a.time || "").localeCompare(b.time || ""));
+    });
     const showRecordPopup = common_vendor.ref(false);
     const currentRecordActivity = common_vendor.ref(null);
     const currentRecordRows = common_vendor.computed(() => {
@@ -235,13 +145,16 @@ const _sfc_main = {
     const goPrevMonth = () => {
       const current = currentMonthDate.value;
       currentMonthDate.value = new Date(current.getFullYear(), current.getMonth() - 1, 1);
+      loadMonthActivities();
     };
     const goNextMonth = () => {
       const current = currentMonthDate.value;
       currentMonthDate.value = new Date(current.getFullYear(), current.getMonth() + 1, 1);
+      loadMonthActivities();
     };
     const selectDay = (day) => {
       selectedDate.value = day.dateKey;
+      loadDateActivities(day.dateKey);
     };
     const openCompletedRecord = (activity) => {
       if (!activity.completed)
@@ -266,29 +179,75 @@ const _sfc_main = {
         return "status-done";
       return "status-pending";
     };
+    const getCurrentMonth = () => {
+      const year = currentMonthDate.value.getFullYear();
+      const month = `${currentMonthDate.value.getMonth() + 1}`.padStart(2, "0");
+      return `${year}-${month}`;
+    };
+    const loadMonthActivities = () => {
+      api_index.listCareActivitiesByMonth(getCurrentMonth(), selectedGardenId.value || void 0).then((activities) => {
+        careActivityList.value = activities || [];
+      }).catch((err) => {
+        common_vendor.index.showToast({
+          title: (err == null ? void 0 : err.message) || "加载月活动失败",
+          icon: "none"
+        });
+      });
+    };
+    const loadDateActivities = (date) => {
+      api_index.listCareActivitiesByDate(date, selectedGardenId.value || void 0).then((activities) => {
+        const map = new Map((careActivityList.value || []).map((item) => [item.id, item]));
+        (activities || []).forEach((item) => map.set(item.id, item));
+        careActivityList.value = Array.from(map.values());
+      }).catch(() => {
+      });
+    };
+    const goIndexPage = () => {
+      common_vendor.index.reLaunch({
+        url: "/pages/index/index",
+        fail: () => {
+          common_vendor.index.redirectTo({
+            url: "/pages/index/index"
+          });
+        }
+      });
+    };
+    common_vendor.onShow(() => {
+      selectedGardenId.value = readSelectedGardenId();
+      loadMonthActivities();
+      loadDateActivities(selectedDate.value);
+    });
     return (_ctx, _cache) => {
       var _a;
       return common_vendor.e({
         a: common_vendor.p({
+          name: "home",
+          size: "14",
+          color: "#33c26d"
+        }),
+        b: common_vendor.o(goIndexPage),
+        c: `${navMetrics.value.statusBarHeight}px`,
+        d: `${navMetrics.value.contentBarHeight}px`,
+        e: common_vendor.p({
           name: "arrow-left",
           size: "14",
           color: "#5a6b60"
         }),
-        b: common_vendor.o(goPrevMonth),
-        c: common_vendor.t(monthLabel.value),
-        d: common_vendor.p({
+        f: common_vendor.o(goPrevMonth),
+        g: common_vendor.t(monthLabel.value),
+        h: common_vendor.p({
           name: "arrow-right",
           size: "14",
           color: "#5a6b60"
         }),
-        e: common_vendor.o(goNextMonth),
-        f: common_vendor.f(weekList, (week, k0, i0) => {
+        i: common_vendor.o(goNextMonth),
+        j: common_vendor.f(weekList, (week, k0, i0) => {
           return {
             a: common_vendor.t(week),
             b: week
           };
         }),
-        g: common_vendor.f(calendarDays.value, (day, k0, i0) => {
+        k: common_vendor.f(calendarDays.value, (day, k0, i0) => {
           return common_vendor.e({
             a: common_vendor.t(day.day),
             b: day.activityCount
@@ -302,19 +261,19 @@ const _sfc_main = {
             h: common_vendor.o(($event) => selectDay(day), day.key)
           });
         }),
-        h: common_vendor.p({
+        l: common_vendor.p({
           showHead: false,
           showFoot: false,
           border: false,
           margin: "0"
         }),
-        i: common_vendor.t(selectedDateLabel.value),
-        j: common_vendor.t(selectedActivities.value.length),
-        k: selectedActivities.value.length
+        m: common_vendor.t(selectedDateLabel.value),
+        n: common_vendor.t(selectedActivities.value.length),
+        o: selectedActivities.value.length
       }, selectedActivities.value.length ? {
-        l: common_vendor.f(selectedActivities.value, (activity, k0, i0) => {
+        p: common_vendor.f(selectedActivities.value, (activity, k0, i0) => {
           return {
-            a: "6e8913ab-4-" + i0 + ",6e8913ab-3",
+            a: "6e8913ab-5-" + i0 + ",6e8913ab-4",
             b: common_vendor.p({
               name: activity.icon,
               size: "30",
@@ -332,22 +291,22 @@ const _sfc_main = {
           };
         })
       } : {}, {
-        m: common_vendor.p({
+        q: common_vendor.p({
           showHead: false,
           showFoot: false,
           border: false,
           margin: "0"
         }),
-        n: common_vendor.t(((_a = currentRecordActivity.value) == null ? void 0 : _a.name) || "养护"),
-        o: common_vendor.o(($event) => showRecordPopup.value = false),
-        p: common_vendor.p({
+        r: common_vendor.t(((_a = currentRecordActivity.value) == null ? void 0 : _a.name) || "养护"),
+        s: common_vendor.o(($event) => showRecordPopup.value = false),
+        t: common_vendor.p({
           name: "close",
           size: "16",
           color: "#8ea096"
         }),
-        q: currentRecordRows.value.length
+        v: currentRecordRows.value.length
       }, currentRecordRows.value.length ? {
-        r: common_vendor.f(currentRecordRows.value, (row, k0, i0) => {
+        w: common_vendor.f(currentRecordRows.value, (row, k0, i0) => {
           return {
             a: common_vendor.t(row.label),
             b: common_vendor.t(row.value),
@@ -355,20 +314,21 @@ const _sfc_main = {
           };
         })
       } : {}, {
-        s: currentRecordPhoto.value
+        x: currentRecordPhoto.value
       }, currentRecordPhoto.value ? {
-        t: currentRecordPhoto.value
+        y: currentRecordPhoto.value
       } : {}, {
-        v: currentRecordNote.value
+        z: currentRecordNote.value
       }, currentRecordNote.value ? {
-        w: common_vendor.t(currentRecordNote.value)
+        A: common_vendor.t(currentRecordNote.value)
       } : {}, {
-        x: common_vendor.o(($event) => showRecordPopup.value = false),
-        y: common_vendor.p({
+        B: common_vendor.o(($event) => showRecordPopup.value = false),
+        C: common_vendor.p({
           show: showRecordPopup.value,
           mode: "bottom",
           round: "18"
-        })
+        }),
+        D: `${navMetrics.value.navBarHeight + 12}px`
       });
     };
   }
