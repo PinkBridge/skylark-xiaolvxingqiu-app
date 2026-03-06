@@ -17,13 +17,13 @@
 		</view>
 		<view class="page-header">
 			<view class="title-row">
-				<view class="page-title">我的绿植花园</view>
+				<view class="page-title">{{ gardenTitle }}</view>
 				<view class="add-plant-btn" @tap="onAddPlant">
 					<up-icon name="plus" size="16" color="#33c26d"></up-icon>
 					<text>添加</text>
 				</view>
 			</view>
-			<view class="page-subtitle">记录每一株生命的成长状态shadbjashdbashd</view>
+			<view class="page-subtitle">{{ gardenDescription }}</view>
 		</view>
 
 		<view class="filter-wrap">
@@ -38,10 +38,10 @@
 			></up-subsection>
 		</view>
 
-		<up-waterfall :key="waterfallKey" :modelValue="filteredPlantList" idKey="id" :addTime="80">
-			<template #column="{ colList }">
+		<view v-if="filteredPlantList.length" class="waterfall-grid">
+			<view class="waterfall-col">
 				<view
-					v-for="item in colList"
+					v-for="item in leftColumnPlants"
 					:key="item.id"
 					class="plant-card"
 					@tap="onPlantCardClick(item)"
@@ -64,20 +64,50 @@
 						</view>
 						<view class="plant-name-row">
 							<view class="plant-name">{{ item.name }}</view>
-							<up-icon v-if="item.focused" name="star-fill" size="15" color="#f5b301"></up-icon>
+							<up-icon v-if="item.focused" name="warning-fill" size="15" color="#f5b301"></up-icon>
 						</view>
-						<text v-if="item.focused && item.focusReason" class="focus-reason">需关注：{{ item.focusReason }}</text>
 					</view>
 				</view>
-			</template>
-		</up-waterfall>
+			</view>
+			<view class="waterfall-col">
+				<view
+					v-for="item in rightColumnPlants"
+					:key="item.id"
+					class="plant-card"
+					@tap="onPlantCardClick(item)"
+				>
+					<view class="plant-cover" :style="{ height: `${item.coverHeight}rpx` }">
+						<image class="plant-cover-image" :src="item.image" mode="aspectFill"></image>
+						<view class="plant-cover-badge">
+							<text class="status-tag" :class="`status-${item.healthStatus}`">{{ item.statusLabel }}</text>
+							<text class="days-chip">第 {{ item.days }} 天</text>
+						</view>
+					</view>
+					<view class="plant-content">
+						<view v-if="item.todayCareTasks.length" class="care-task-list">
+							<text
+								v-for="task in item.todayCareTasks.slice(0, 3)"
+								:key="`${item.id}-${task}`"
+								class="care-task-tag"
+							>{{ task }}</text>
+							<text v-if="item.todayCareTasks.length > 3" class="care-task-tag">+{{ item.todayCareTasks.length - 3 }}</text>
+						</view>
+						<view class="plant-name-row">
+							<view class="plant-name">{{ item.name }}</view>
+							<up-icon v-if="item.focused" name="warning-fill" size="15" color="#f5b301"></up-icon>
+						</view>
+					</view>
+				</view>
+			</view>
+		</view>
+		<view v-else class="empty-plant">暂无绿植</view>
 	</view>
 </template>
 
 <script setup>
 import { computed, ref } from 'vue'
 import { onLoad, onShow, onUnload } from '@dcloudio/uni-app'
-import { listPlants } from '@/api'
+import { listCareTasks, listGardens, listPlants } from '@/api'
 
 const SELECTED_GARDEN_KEY = 'selectedGardenId'
 const SELECTED_PLANT_FILTER_KEY = 'selectedPlantFilter'
@@ -106,8 +136,10 @@ function resolveNavMetrics() {
 const plantFilterTabs = ['全部', '健康', '异常', '今日待呵护', '关注']
 const activePlantFilterIndex = ref(0)
 const greenPlantList = ref([])
-const waterfallKey = ref(0)
+const latestLoadToken = ref(0)
 const scopedGardenId = ref('')
+const gardenTitle = ref('我的绿植花园')
+const gardenDescription = ref('记录每一株生命的成长状态')
 
 const filterMap = {
 	0: 'all',
@@ -140,20 +172,99 @@ const toCard = (item, index) => ({
 })
 
 const filteredPlantList = computed(() => greenPlantList.value)
+const leftColumnPlants = computed(() => filteredPlantList.value.filter((_, index) => index % 2 === 0))
+const rightColumnPlants = computed(() => filteredPlantList.value.filter((_, index) => index % 2 === 1))
 
-const loadPlants = () => {
+const isHealthyPlant = (plant) => {
+	const status = `${plant?.healthStatus || ''}`.toLowerCase()
+	if (status) return status === 'healthy' || status === '健康'
+	return `${plant?.statusLabel || ''}`.trim() === '健康'
+}
+
+const isAbnormalPlant = (plant) => {
+	const status = `${plant?.healthStatus || ''}`.toLowerCase()
+	if (status) return ['sick', 'dormant', '生病', '休眠'].includes(status)
+	const label = `${plant?.statusLabel || ''}`.trim()
+	return label === '生病' || label === '休眠'
+}
+
+const filterPlantCardsByKey = (cards, filterKey) => {
+	if (!Array.isArray(cards)) return []
+	if (filterKey === 'healthy') return cards.filter((item) => isHealthyPlant(item))
+	if (filterKey === 'abnormal') return cards.filter((item) => isAbnormalPlant(item))
+	if (filterKey === 'todo') return cards.filter((item) => (item?.todayCareTasks || []).length > 0)
+	if (filterKey === 'focus') return cards.filter((item) => !!item?.focused)
+	return cards
+}
+
+const buildTodayCareTaskMap = (tasks) => {
+	const map = {}
+	;(tasks || []).forEach((task) => {
+		const plantName = `${task?.plantName || ''}`.trim()
+		if (!plantName) return
+		const isToday = Number(task?.offset) === 0
+		const pending = !task?.completed
+		if (!isToday || !pending) return
+		if (!map[plantName]) map[plantName] = []
+		const label = `${task?.name || ''}`.trim() || '待养护'
+		map[plantName].push(label)
+	})
+	return map
+}
+
+const loadPlants = async () => {
+	const token = ++latestLoadToken.value
 	const filter = filterMap[activePlantFilterIndex.value] || 'all'
-	listPlants(filter, scopedGardenId.value || undefined)
-		.then((list) => {
-			greenPlantList.value = []
-			greenPlantList.value = (list || []).map((item, index) => toCard(item, index))
-			waterfallKey.value += 1
+	const requestFilter = filter === 'todo' || filter === 'all' ? undefined : filter
+	greenPlantList.value = []
+	Promise.all([
+		listPlants(requestFilter, scopedGardenId.value || undefined),
+		listCareTasks(scopedGardenId.value || undefined).catch(() => [])
+	])
+		.then(([list, tasks]) => {
+			if (token !== latestLoadToken.value) return
+			const todayTaskMap = buildTodayCareTaskMap(tasks || [])
+			const cards = (list || []).map((item, index) => {
+				const card = toCard(item, index)
+				const taskByName = todayTaskMap[`${card?.name || ''}`.trim()] || []
+				card.todayCareTasks = taskByName.length ? taskByName : (card.todayCareTasks || [])
+				return card
+			})
+			greenPlantList.value = filterPlantCardsByKey(cards, filter)
 		})
 		.catch((err) => {
+			if (token !== latestLoadToken.value) return
 			uni.showToast({
 				title: err?.message || '加载绿植失败',
 				icon: 'none'
 			})
+		})
+}
+
+const loadCurrentGardenMeta = () => {
+	return listGardens()
+		.then((rows) => {
+			const gardens = rows || []
+			if (!gardens.length) {
+				gardenTitle.value = '我的绿植花园'
+				gardenDescription.value = '记录每一株生命的成长状态'
+				return
+			}
+			const selectedId = `${scopedGardenId.value || readSelectedGardenId()}`.trim()
+			const selectedGarden = gardens.find((item) => `${item?.id ?? ''}` === selectedId)
+			const defaultGarden = gardens.find((item) => !!item?.isDefault)
+			const targetGarden = selectedGarden || defaultGarden || gardens[0]
+			const targetId = `${targetGarden?.id ?? ''}`.trim()
+			if (targetId) {
+				scopedGardenId.value = targetId
+				uni.setStorageSync(SELECTED_GARDEN_KEY, targetId)
+			}
+			gardenTitle.value = targetGarden?.name || '我的绿植花园'
+			gardenDescription.value = targetGarden?.description || '记录每一株生命的成长状态'
+		})
+		.catch(() => {
+			gardenTitle.value = '我的绿植花园'
+			gardenDescription.value = '记录每一株生命的成长状态'
 		})
 }
 
@@ -206,7 +317,6 @@ const handlePlantDeleted = (payload) => {
 	const deletedId = Number(payload?.id || 0)
 	if (deletedId) {
 		greenPlantList.value = greenPlantList.value.filter((item) => Number(item.id) !== deletedId)
-		waterfallKey.value += 1
 	}
 	loadPlants()
 }
@@ -223,7 +333,9 @@ onShow(() => {
 		activePlantFilterIndex.value = reverseFilterMap[selectedFilter]
 		uni.removeStorageSync(SELECTED_PLANT_FILTER_KEY)
 	}
-	loadPlants()
+	loadCurrentGardenMeta().finally(() => {
+		loadPlants()
+	})
 })
 
 onLoad((query) => {
@@ -349,6 +461,17 @@ onUnload(() => {
 		box-shadow: 0 10rpx 30rpx rgba(34, 137, 78, 0.1);
 	}
 
+	.waterfall-grid {
+		display: flex;
+		align-items: flex-start;
+		gap: 14rpx;
+	}
+
+	.waterfall-col {
+		flex: 1;
+		min-width: 0;
+	}
+
 	.plant-cover {
 		width: 100%;
 		position: relative;
@@ -427,14 +550,6 @@ onUnload(() => {
 		margin-top: 6rpx;
 	}
 
-	.focus-reason {
-		display: block;
-		margin-top: 6rpx;
-		font-size: 22rpx;
-		color: #8a5f00;
-		line-height: 1.4;
-	}
-
 	.care-task-list {
 		display: flex;
 		flex-wrap: wrap;
@@ -449,5 +564,12 @@ onUnload(() => {
 		color: #2f8f56;
 		background-color: #f2fbf5;
 		border: 1px solid #d7efdf;
+	}
+
+	.empty-plant {
+		margin-top: 60rpx;
+		font-size: 24rpx;
+		color: #8ea096;
+		text-align: center;
 	}
 </style>

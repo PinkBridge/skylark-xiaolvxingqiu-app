@@ -1,5 +1,26 @@
 <template>
 	<view class="index-page">
+		<view class="top-toolbar">
+			<view class="toolbar-spacer"></view>
+			<view class="toolbar-actions">
+				<view class="toolbar-btn" @tap="onGoMine">
+					<up-icon name="account-fill" size="14" color="#2f8f56"></up-icon>
+					<text>我的</text>
+				</view>
+				<view class="toolbar-btn" @tap="onAddGarden">
+					<up-icon name="plus" size="14" color="#2f8f56"></up-icon>
+					<text>添加花园</text>
+				</view>
+			</view>
+		</view>
+
+		<view class="recognize-fixed-wrap">
+			<view class="recognize-btn" @tap="onRecognize">
+				<up-icon name="camera-fill" size="18" color="#ffffff"></up-icon>
+				<text>AI识别</text>
+			</view>
+		</view>
+
 		<view v-if="gardenCards.length" class="garden-list">
 			<up-card
 				v-for="garden in gardenCards"
@@ -49,10 +70,6 @@
 			</up-card>
 		</view>
 		<view v-else class="empty-garden">暂无花园，请点击右下角加号创建</view>
-
-		<view class="floating-add-btn" @tap="onAddGarden">
-			<up-icon name="plus" size="20" color="#ffffff"></up-icon>
-		</view>
 	</view>
 </template>
 
@@ -123,6 +140,37 @@ const onEditGardenInfo = () => {
 const onAddGarden = () => {
 	uni.navigateTo({
 		url: '/pages/index/garden-create'
+	})
+}
+
+const onGoMine = () => {
+	uni.navigateTo({
+		url: '/pages/mime/mime',
+		fail: () => {
+			uni.reLaunch({
+				url: '/pages/mime/mime'
+			})
+		}
+	})
+}
+
+const onRecognize = () => {
+	uni.showActionSheet({
+		itemList: ['拍照识别', '从相册识别'],
+		success: (res) => {
+			const sourceType = res.tapIndex === 0 ? ['camera'] : ['album']
+			uni.chooseImage({
+				count: 1,
+				sizeType: ['compressed'],
+				sourceType,
+				success: () => {
+					uni.showToast({
+						title: '识别功能即将上线',
+						icon: 'none'
+					})
+				}
+			})
+		}
 	})
 }
 
@@ -223,8 +271,65 @@ const onFooterAction = (item) => {
 <style scoped lang="scss">
 	.index-page {
 		min-height: 100vh;
-		padding: 20rpx 24rpx 24rpx;
+		padding: 20rpx 24rpx 180rpx;
 		background: #f6fcf8;
+	}
+
+	.top-toolbar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 14rpx;
+	}
+
+	.toolbar-spacer {
+		width: 1rpx;
+		height: 1rpx;
+	}
+
+	.toolbar-actions {
+		display: flex;
+		align-items: center;
+		gap: 10rpx;
+	}
+
+	.toolbar-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 6rpx;
+		padding: 8rpx 14rpx;
+		border-radius: 999rpx;
+		background: #eefbf3;
+		border: 1px solid #d7efdf;
+		font-size: 22rpx;
+		font-weight: 600;
+		color: #2f8f56;
+	}
+
+	.recognize-fixed-wrap {
+		position: fixed;
+		left: 24rpx;
+		right: 24rpx;
+		bottom: 120rpx;
+		z-index: 98;
+		display: flex;
+		justify-content: center;
+	}
+
+	.recognize-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 8rpx;
+		min-width: 220rpx;
+		height: 78rpx;
+		padding: 0 26rpx;
+		border-radius: 999rpx;
+		background: linear-gradient(135deg, #33c26d 0%, #27a95b 100%);
+		box-shadow: 0 12rpx 24rpx rgba(51, 194, 109, 0.28);
+		font-size: 28rpx;
+		font-weight: 700;
+		color: #ffffff;
 	}
 
 	.garden-list {
@@ -347,21 +452,6 @@ const onFooterAction = (item) => {
 
 	.foot-item text {
 		white-space: nowrap;
-	}
-
-	.floating-add-btn {
-		position: fixed;
-		right: 30rpx;
-		bottom: 120rpx;
-		width: 88rpx;
-		height: 88rpx;
-		border-radius: 50%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: #33c26d;
-		box-shadow: 0 12rpx 26rpx rgba(51, 194, 109, 0.35);
-		z-index: 99;
 	}
 
 	.empty-garden {

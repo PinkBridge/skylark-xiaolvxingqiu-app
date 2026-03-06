@@ -48,6 +48,14 @@ export const listCareActivitiesByMonth = (month, gardenId) => {
   }
   return http({ url: `/api/care/activities?${params.join('&')}` })
 }
+export const listPlantGrowthRecords = (plantId, pageNo = 1, pageSize = 10) =>
+  http({ url: `/api/care/records?plantId=${encodeURIComponent(plantId)}&pageNo=${encodeURIComponent(pageNo)}&pageSize=${encodeURIComponent(pageSize)}` })
+export const listPlantAlbumRecords = (plantId, pageNo = 1, pageSize = 10) =>
+  http({ url: `/api/care/albums?plantId=${encodeURIComponent(plantId)}&pageNo=${encodeURIComponent(pageNo)}&pageSize=${encodeURIComponent(pageSize)}` })
+export const getPlantCareStats = (plantId) =>
+  http({ url: `/api/care/stats?plantId=${encodeURIComponent(plantId)}` })
+export const getPlantMonthlyStats = (plantId, months = 6) =>
+  http({ url: `/api/care/stats/monthly?plantId=${encodeURIComponent(plantId)}&months=${encodeURIComponent(months)}` })
 export const getCarePlanConfig = (plantId) => http({ url: `/api/care/plans/${plantId}` })
 export const saveCarePlanConfig = (plantId, data) => http({ url: `/api/care/plans/${plantId}`, method: 'PUT', data })
 

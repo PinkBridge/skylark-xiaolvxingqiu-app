@@ -152,6 +152,18 @@ const imageSourceActions = [
 const showDatePicker = ref(false)
 const datePickerValue = ref(Date.now())
 
+const resetPlantForm = () => {
+	editPlantId.value = ''
+	plantForm.image = ''
+	plantForm.name = ''
+	plantForm.species = ''
+	plantForm.cultivationType = 'soil'
+	plantForm.plantingDate = ''
+	plantForm.note = ''
+	cultivationIndex.value = 0
+	datePickerValue.value = Date.now()
+}
+
 const onCultivationChange = (index) => {
 	cultivationIndex.value = index
 	plantForm.cultivationType = index === 0 ? 'soil' : 'water'
@@ -216,7 +228,7 @@ const onSubmitPlant = () => {
 				icon: 'success'
 			})
 			setTimeout(() => {
-				uni.redirectTo({
+				uni.switchTab({
 					url: '/pages/plant/plant'
 				})
 			}, 500)
@@ -230,6 +242,7 @@ const onSubmitPlant = () => {
 }
 
 onLoad((query) => {
+	resetPlantForm()
 	const id = query?.id
 	if (!id) return
 	editPlantId.value = id

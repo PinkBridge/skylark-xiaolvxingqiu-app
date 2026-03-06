@@ -428,16 +428,43 @@
 
 				<up-form :model="shotForm" labelPosition="top">
 					<up-form-item label="上传图片">
-						<view class="shot-photo-picker" @tap="openPhotoSourceSheet('shot')">
-							<image
-								v-if="shotForm.photo"
-								class="shot-photo"
-								:src="shotForm.photo"
-								mode="aspectFill"
-							></image>
-							<view v-else class="shot-photo-placeholder">
-								<up-icon name="camera-fill" size="20" color="#33c26d"></up-icon>
-								<text>拍照或从相册选择</text>
+						<view
+							v-if="!shotForm.photos.length"
+							class="shot-photo-picker shot-photo-picker--empty"
+							@tap="openPhotoSourceSheet('shot')"
+						>
+							<view class="shot-photo-placeholder shot-photo-placeholder--empty">
+								<up-icon name="camera-fill" size="24" color="#33c26d"></up-icon>
+								<text class="shot-photo-main-text">拍照或从相册选择</text>
+								<text class="shot-photo-sub-text">最多上传9张</text>
+							</view>
+						</view>
+						<view v-else class="shot-photos-grid">
+							<view
+								v-for="(photo, idx) in shotForm.photos"
+								:key="`${photo}-${idx}`"
+								class="shot-photo-item"
+								@tap="onPreviewShotPhoto(idx)"
+							>
+								<image
+									class="shot-photo"
+									:src="photo"
+									mode="aspectFill"
+								></image>
+								<view class="shot-photo-remove" @tap.stop="onRemoveShotPhoto(idx)">
+									<up-icon name="close" size="10" color="#ffffff"></up-icon>
+								</view>
+							</view>
+							<view
+								v-if="shotForm.photos.length < 9"
+								class="shot-photo-picker shot-photo-picker--add"
+								@tap="openPhotoSourceSheet('shot')"
+							>
+								<view class="shot-photo-placeholder shot-photo-placeholder--add">
+									<up-icon name="plus" size="20" color="#33c26d"></up-icon>
+									<text class="shot-photo-main-text">添加</text>
+									<text class="shot-photo-count">{{ shotForm.photos.length }}/9</text>
+								</view>
 							</view>
 						</view>
 					</up-form-item>
@@ -806,7 +833,7 @@ const repotForm = reactive({
 })
 
 const shotForm = reactive({
-	photo: '',
+	photos: [],
 	note: ''
 })
 
@@ -904,7 +931,11 @@ const formatRecordSummary = (name, record) => {
 		if (record.treatment) parts.push(`处理：${record.treatment}`)
 		return parts.join('，')
 	}
-	if (name === '拍照') return record.photo ? '已上传照片' : ''
+	if (name === '拍照') {
+		const count = Array.isArray(record.photos) ? record.photos.filter(Boolean).length : 0
+		if (count > 0) return `已上传${count}张照片`
+		return record.photo ? '已上传1张照片' : ''
+	}
 	if (name === '松土') return record.photo ? '已上传照片' : ''
 	return ''
 }
@@ -944,7 +975,7 @@ const resetRepotForm = () => {
 }
 
 const resetShotForm = () => {
-	shotForm.photo = ''
+	shotForm.photos = []
 	shotForm.note = ''
 }
 
@@ -1057,12 +1088,22 @@ const openPhotoSourceSheet = (target = 'watering') => {
 
 const onPhotoSourceSelect = (action) => {
 	showPhotoSourceSheet.value = false
+	const remaining = 9 - (shotForm.photos?.length || 0)
+	if (photoUploadTarget.value === 'shot' && remaining <= 0) {
+		uni.showToast({
+			title: '最多上传9张图片',
+			icon: 'none'
+		})
+		return
+	}
+	const maxCount = photoUploadTarget.value === 'shot' ? remaining : 1
 	uni.chooseImage({
-		count: 1,
+		count: maxCount,
 		sizeType: ['compressed'],
 		sourceType: action.sourceType,
 		success: (res) => {
-			const photoPath = res.tempFilePaths?.[0] || ''
+			const picked = Array.isArray(res.tempFilePaths) ? res.tempFilePaths.filter(Boolean) : []
+			const photoPath = picked[0] || ''
 			if (photoUploadTarget.value === 'fertilize') {
 				fertilizeForm.photo = photoPath
 				return
@@ -1076,7 +1117,7 @@ const onPhotoSourceSelect = (action) => {
 				return
 			}
 			if (photoUploadTarget.value === 'shot') {
-				shotForm.photo = photoPath
+				shotForm.photos = [...(shotForm.photos || []), ...picked].slice(0, 9)
 				return
 			}
 			if (photoUploadTarget.value === 'measure') {
@@ -1093,6 +1134,19 @@ const onPhotoSourceSelect = (action) => {
 			}
 			wateringForm.photo = photoPath
 		}
+	})
+}
+
+const onRemoveShotPhoto = (idx) => {
+	if (idx < 0 || idx >= shotForm.photos.length) return
+	shotForm.photos.splice(idx, 1)
+}
+
+const onPreviewShotPhoto = (idx) => {
+	if (idx < 0 || idx >= shotForm.photos.length) return
+	uni.previewImage({
+		urls: shotForm.photos,
+		current: shotForm.photos[idx]
 	})
 }
 
@@ -1174,7 +1228,7 @@ const submitRepotRecord = () => {
 }
 
 const submitShotRecord = () => {
-	if (!shotForm.photo) {
+	if (!shotForm.photos.length) {
 		uni.showToast({
 			title: '请先上传图片',
 			icon: 'none'
@@ -1192,7 +1246,8 @@ const submitShotRecord = () => {
 	const taskId = activeShotTaskId.value
 	if (!taskId) return
 	completeCareTask(taskId, {
-		photo: shotForm.photo || null,
+		photo: shotForm.photos[0] || null,
+		photos: shotForm.photos.length ? shotForm.photos : null,
 		note: shotForm.note?.trim() || null
 	}).then(() => {
 		showShotPopup.value = false
@@ -1740,12 +1795,56 @@ onShow(() => {
 	}
 
 	.shot-photo-picker {
+		position: relative;
 		width: 100%;
 		height: 180rpx;
 		border-radius: 14rpx;
 		border: 1px dashed #b9e5cb;
 		background: #eefbf3;
 		overflow: hidden;
+		box-sizing: border-box;
+	}
+
+	.shot-photos-grid {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 12rpx;
+		width: 100%;
+	}
+
+	.shot-photo-item {
+		position: relative;
+		width: calc((100% - 24rpx) / 3);
+		height: 0;
+		padding-top: calc((100% - 24rpx) / 3);
+		border-radius: 14rpx;
+		overflow: hidden;
+		background: #eefbf3;
+		box-sizing: border-box;
+	}
+
+	.shot-photo-picker--add {
+		width: calc((100% - 24rpx) / 3);
+		height: 0;
+		padding-top: calc((100% - 24rpx) / 3);
+	}
+
+	.shot-photo-picker--empty {
+		height: 220rpx;
+	}
+
+	.shot-photo-remove {
+		position: absolute;
+		top: 6rpx;
+		right: 6rpx;
+		width: 28rpx;
+		height: 28rpx;
+		border-radius: 999rpx;
+		background: rgba(0, 0, 0, 0.45);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 3;
 	}
 
 	.measure-photo-picker {
@@ -1796,6 +1895,9 @@ onShow(() => {
 	}
 
 	.shot-photo {
+		position: absolute;
+		left: 0;
+		top: 0;
 		width: 100%;
 		height: 100%;
 	}
@@ -1864,6 +1966,9 @@ onShow(() => {
 	}
 
 	.shot-photo-placeholder {
+		position: absolute;
+		left: 0;
+		top: 0;
 		width: 100%;
 		height: 100%;
 		display: flex;
@@ -1873,6 +1978,34 @@ onShow(() => {
 		gap: 8rpx;
 		font-size: 22rpx;
 		color: #2f8f56;
+		text-align: center;
+		padding: 10rpx;
+		box-sizing: border-box;
+	}
+
+	.shot-photo-placeholder--add {
+		gap: 6rpx;
+	}
+
+	.shot-photo-placeholder--empty {
+		gap: 10rpx;
+	}
+
+	.shot-photo-main-text {
+		font-size: 22rpx;
+		color: #2f8f56;
+		line-height: 1.3;
+	}
+
+	.shot-photo-sub-text {
+		font-size: 20rpx;
+		color: #8ab99f;
+		line-height: 1.3;
+	}
+
+	.shot-photo-count {
+		font-size: 20rpx;
+		color: #6c9a7f;
 	}
 
 	.measure-photo-placeholder {

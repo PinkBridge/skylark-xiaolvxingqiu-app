@@ -8,15 +8,36 @@
 						<view class="plant-name-row">
 							<view class="plant-title-wrap">
 								<text class="plant-name">{{ currentPlant.name }}</text>
-								<view class="favorite-btn" @tap="onToggleFocus">
-									<up-icon
-										:name="currentPlant.focused ? 'star-fill' : 'star'"
-										size="18"
-										:color="currentPlant.focused ? '#f5b301' : '#b8c2bd'"
-									></up-icon>
-								</view>
 							</view>
 							<view class="action-btn-wrap">
+								<view
+									class="action-btn status-btn"
+									:style="{
+										color: currentStatusOption.color,
+										background: currentStatusOption.bgColor,
+										borderColor: currentStatusOption.borderColor
+									}"
+									@tap="onSwitchPlantStatus"
+								>
+									<up-icon
+										:name="currentStatusOption.icon"
+										size="14"
+										:color="currentStatusOption.color"
+									></up-icon>
+									<text>{{ currentStatusOption.label }}</text>
+								</view>
+								<view
+									class="action-btn focus-btn"
+									:class="{ 'action-btn--focus-active': currentPlant.focused }"
+									@tap="onToggleFocus"
+								>
+									<up-icon
+										:name="currentPlant.focused ? 'warning-fill' : 'warning'"
+										size="14"
+										:color="currentPlant.focused ? '#d48806' : '#2f8f56'"
+									></up-icon>
+									<text>{{ currentPlant.focused ? '已关注' : '关注' }}</text>
+								</view>
 								<view class="action-btn" @tap="onEditPlant">
 									<up-icon name="edit-pen" size="16" color="#33c26d"></up-icon>
 									<text>编辑</text>
@@ -34,7 +55,7 @@
 								class="basic-info-item"
 								:class="`basic-info-item--${infoItem.key}`"
 							>
-								<up-icon :name="infoItem.icon" size="14" color="#33c26d"></up-icon>
+								<up-icon :name="infoItem.icon" size="14" :color="infoItem.iconColor || '#7c8b83'"></up-icon>
 								<text class="info-value">{{ infoItem.value }}</text>
 							</view>
 						</view>
@@ -69,19 +90,28 @@
 					<view class="record-item">
 						<view class="record-main">
 							<view class="record-icon-box">
-								<up-icon :name="record.icon" size="16" color="#33c26d"></up-icon>
+								<up-icon :name="record.icon || 'checkmark-circle-fill'" size="16" color="#33c26d"></up-icon>
 							</view>
 							<view class="record-content">
 								<view class="record-head">
 									<text class="record-action">{{ record.name }}</text>
-									<text class="record-time">第 {{ record.day }} 天</text>
+									<text class="record-time">{{ record.timeText }}</text>
 								</view>
-								<text class="record-note">{{ record.content }}</text>
+								<text class="record-note">{{ record.content || '已完成本次养护记录' }}</text>
 							</view>
 						</view>
 					</view>
 				</template>
 			</up-card>
+			<view v-if="!growthRecords.length && !growthRecordLoading" class="records-empty">
+				<text>暂无生长记录</text>
+			</view>
+			<view v-if="growthRecordLoading" class="records-loading">
+				<text>加载中...</text>
+			</view>
+			<view v-else-if="growthRecords.length && !growthRecordHasMore" class="records-finished">
+				<text>没有更多记录了</text>
+			</view>
 		</view>
 
 		<view v-else-if="activeTabIndex === 1" class="section-list">
@@ -107,7 +137,7 @@
 								space="10rpx"
 							></up-album>
 							<view class="album-footer">
-								<text class="album-date album-date-bottom">{{ photo.date }}</text>
+								<text class="album-date album-date-bottom">{{ toDaysAgoText(photo.date) }}</text>
 								<view class="album-share-btn" @tap="onShareToMoments(photo)">
 									<up-icon name="share-fill" size="16" color="#33c26d"></up-icon>
 								</view>
@@ -116,6 +146,15 @@
 					</view>
 				</template>
 			</up-card>
+			<view v-if="!photoRecords.length && !albumRecordLoading" class="records-empty">
+				<text>暂无植物相册</text>
+			</view>
+			<view v-if="albumRecordLoading" class="records-loading">
+				<text>加载中...</text>
+			</view>
+			<view v-else-if="photoRecords.length && !albumRecordHasMore" class="records-finished">
+				<text>没有更多照片了</text>
+			</view>
 		</view>
 
 		<view v-else-if="activeTabIndex === 2" class="section-list">
@@ -209,12 +248,98 @@
 							<text class="stats-label">拍照记录</text>
 						</view>
 						<view class="stats-item">
+							<text class="stats-value">{{ statsSummary.waterCount }}</text>
+							<text class="stats-label">浇水次数</text>
+						</view>
+						<view class="stats-item">
 							<text class="stats-value">{{ statsSummary.lastCareGap }}</text>
 							<text class="stats-label">距上次养护(天)</text>
 						</view>
 						<view class="stats-item">
-							<text class="stats-value">{{ statsSummary.healthScore }}</text>
-							<text class="stats-label">健康评分</text>
+							<text class="stats-value">{{ statsSummary.weekCareCount }}</text>
+							<text class="stats-label">本周养护次数</text>
+						</view>
+					</view>
+					<view class="stats-chart-wrap">
+						<view class="stats-chart-title">
+							<text>近六个月养护次数</text>
+						</view>
+						<view class="stats-chart">
+							<view
+								v-for="item in monthlyStats"
+								:key="item.month"
+								class="stats-chart-item"
+							>
+								<text class="stats-chart-value">{{ item.count }}</text>
+								<view class="stats-chart-bar-bg">
+									<view
+										class="stats-chart-bar"
+										:style="{ height: `${Math.max(8, Math.round((item.count / monthlyBarMax) * 100))}%` }"
+									></view>
+								</view>
+								<text class="stats-chart-label">{{ item.label }}</text>
+							</view>
+						</view>
+					</view>
+					<view class="stats-chart-wrap">
+						<view class="stats-chart-title">
+							<text>每日浇水时间分布</text>
+						</view>
+						<view class="water-time-list">
+							<view
+								v-for="item in wateringTimeDistribution"
+								:key="item.segment"
+								class="water-time-item"
+							>
+								<view class="water-time-head">
+									<text class="water-time-label">{{ item.label }}</text>
+									<text class="water-time-count">{{ item.count }}次</text>
+								</view>
+								<view class="water-time-bar-bg">
+									<view
+										class="water-time-bar"
+										:style="{ width: `${Math.max(8, Math.round((item.count / wateringTimeMax) * 100))}%` }"
+									></view>
+								</view>
+							</view>
+						</view>
+						<view
+							v-if="statsSummary.wateringOutsideRecommendedCount > 0"
+							class="water-time-tip water-time-tip--warn"
+						>
+							<text>
+								提示：检测到 {{ statsSummary.wateringOutsideRecommendedCount }} 次浇水不在早晚时段，尽量在早上或晚上浇水。
+							</text>
+						</view>
+						<view v-else class="water-time-tip">
+							<text>{{ statsSummary.wateringTimeTip || '浇水时间分布良好。' }}</text>
+						</view>
+					</view>
+					<view class="stats-chart-wrap">
+						<view class="stats-chart-title">
+							<text>健康状态时长占比（从开始到当前）</text>
+						</view>
+						<view class="health-status-list">
+							<view
+								v-for="item in healthStatusDistribution"
+								:key="item.status"
+								class="health-status-item"
+							>
+								<view class="health-status-head">
+									<text class="health-status-label">{{ item.status }}</text>
+									<text class="health-status-count">{{ item.daysText }} · {{ item.ratioText }}</text>
+								</view>
+								<view class="health-status-bar-bg">
+									<view
+										class="health-status-bar"
+										:class="`health-status-bar--${item.key}`"
+										:style="{ width: `${item.ratio}` }"
+									></view>
+								</view>
+							</view>
+						</view>
+						<view v-if="isAlwaysHealthyTimeline" class="water-time-tip">
+							<text>绿植在您的精心呵护下一直健康成长</text>
 						</view>
 					</view>
 				</template>
@@ -233,7 +358,7 @@
 					<up-icon name="close" size="16" color="#8ea096" @tap="showFocusPopup = false"></up-icon>
 				</view>
 				<up-form :model="focusForm" labelPosition="top">
-					<up-form-item label="关注照片">
+					<up-form-item label="图片">
 						<view class="focus-photo-picker" @tap="onPickFocusPhoto">
 							<image
 								v-if="focusForm.photo"
@@ -247,10 +372,10 @@
 							</view>
 						</view>
 					</up-form-item>
-					<up-form-item label="关注原因">
+					<up-form-item label="备注">
 						<up-textarea
 							v-model="focusForm.reason"
-							placeholder="请输入需要重点关注的原因"
+							placeholder="请输入备注"
 							border="surround"
 							height="90"
 							maxlength="120"
@@ -274,14 +399,19 @@
 
 <script setup>
 import { computed, reactive, ref } from 'vue'
-import { onLoad } from '@dcloudio/uni-app'
+import { onLoad, onReachBottom } from '@dcloudio/uni-app'
 import {
 	clearPlantFocus,
 	deletePlant as deletePlantApi,
 	getCarePlanConfig,
+	getPlantCareStats,
+	getPlantMonthlyStats,
 	getPlantById,
+	listPlantAlbumRecords,
+	listPlantGrowthRecords,
 	saveCarePlanConfig,
-	setPlantFocus
+	setPlantFocus,
+	updatePlant
 } from '@/api'
 
 const detailTabs = ['生长记录', '植物相册', '养护计划', '统计分析']
@@ -304,121 +434,62 @@ const focusForm = reactive({
 	photo: '',
 	reason: ''
 })
+const switchingStatus = ref(false)
 
-const growthRecordMap = {
-	1: [
-		{
-			id: '1-1',
-			icon: '/static/icon/water.png',
-			name: '浇水',
-			day: 28,
-			content: '土壤偏干，补水约 180ml。'
-		},
-		{
-			id: '1-2',
-			icon: '/static/icon/prune.png',
-			name: '修剪',
-			day: 25,
-			content: '修剪底部老叶，促进新芽生长。'
-		},
-		{
-			id: '1-3',
-			icon: '/static/icon/fertilize.png',
-			name: '施肥',
-			day: 21,
-			content: '补充一次稀释营养液。'
-		},
-		{
-			id: '1-4',
-			icon: '/static/icon/loosen.png',
-			name: '松土',
-			day: 18,
-			content: '疏松土壤，促进根系呼吸。'
-		},
-		{
-			id: '1-5',
-			icon: '/static/icon/repot.png',
-			name: '换盆',
-			day: 15,
-			content: '更换新的盆土，促进生长。'
-		},
-		{
-			id: '1-6',
-			icon: '/static/icon/pest.png',
-			name: '病虫害',
-			day: 12,
-			content: '发现蚜虫，喷洒杀虫剂。'
-		},
-		{
-			id: '1-7',
-			icon: '/static/icon/measure.png',
-			name: '测量',
-			day: 9,
-			content: '测量植株高度，调整光照。'
-		},
-		{
-			id: '1-8',
-			icon: '/static/icon/photo.png',
-			name: '拍照',
-			day: 6,
-			content: '拍摄植株照片，记录生长状态。'
-		},
-	]
+const plantStatusOptions = [
+	{ value: 'healthy', label: '健康', color: '#33c26d', bgColor: '#eefbf3', borderColor: '#d7efdf', icon: 'checkmark-circle-fill' },
+	{ value: 'sick', label: '生病', color: '#f56c6c', bgColor: '#fff3f3', borderColor: '#ffd6d6', icon: 'close-circle-fill' },
+	{ value: 'dormant', label: '休眠', color: '#e6a23c', bgColor: '#fff7e6', borderColor: '#ffe7ba', icon: 'clock-fill' },
+	{ value: 'dead', label: '已死亡', color: '#909399', bgColor: '#f4f4f5', borderColor: '#e4e7ed', icon: 'minus-circle-fill' },
+	{ value: 'gifted', label: '已送人', color: '#409eff', bgColor: '#ecf5ff', borderColor: '#d9ecff', icon: 'account-fill' },
+	{ value: 'sold', label: '已售出', color: '#9c6bff', bgColor: '#f5f0ff', borderColor: '#e5d8ff', icon: 'checkmark-circle-fill' }
+]
+
+const statusAliasMap = {
+	健康: 'healthy',
+	生病: 'sick',
+	休眠: 'dormant',
+	已死亡: 'dead',
+	死亡: 'dead',
+	已送人: 'gifted',
+	已售出: 'sold'
 }
 
-const photoRecordMap = {
-	1: [
-		{
-			id: '1-p1',
-			date: '2026-02-25',
-			desc: '新芽冒出与叶片状态记录',
-			images: [
-				'/static/flower/857f855fcea81e07d1c315589d5d5a30.jpg',
-				'/static/flower/4c43268b47b31cfab3d434d474ad728c.jpg',
-				'/static/flower/b22cd3cf854015e988176e17dab8a554.jpg',
-				'/static/flower/857f855fcea81e07d1c315589d5d5a30.jpg',
-				'/static/flower/4c43268b47b31cfab3d434d474ad728c.jpg',
-				'/static/flower/b22cd3cf854015e988176e17dab8a554.jpg',
-				'/static/flower/e0c65131708dbcea21fdb5a99a157ac4.jpg',
-				'/static/flower/4f068b19d4225040f35079b570587bfe.jpg',
-				'/static/flower/857f855fcea81e07d1c315589d5d5a30.jpg',
-				'/static/flower/4c43268b47b31cfab3d434d474ad728c.jpg',
-				'/static/flower/b22cd3cf854015e988176e17dab8a554.jpg'
-			]
-		},
-		{
-			id: '1-p3',
-			date: '2026-02-25',
-			desc: '新芽冒出与叶片状态记录',
-			images: [
-				'/static/flower/857f855fcea81e07d1c315589d5d5a30.jpg',
-				'/static/flower/4c43268b47b31cfab3d434d474ad728c.jpg',
-				'/static/flower/b22cd3cf854015e988176e17dab8a554.jpg',
-				'/static/flower/857f855fcea81e07d1c315589d5d5a30.jpg',
-				'/static/flower/4c43268b47b31cfab3d434d474ad728c.jpg',
-				'/static/flower/b22cd3cf854015e988176e17dab8a554.jpg',
-				'/static/flower/e0c65131708dbcea21fdb5a99a157ac4.jpg',
-				'/static/flower/4f068b19d4225040f35079b570587bfe.jpg',
-				'/static/flower/857f855fcea81e07d1c315589d5d5a30.jpg',
-				'/static/flower/4c43268b47b31cfab3d434d474ad728c.jpg',
-				'/static/flower/b22cd3cf854015e988176e17dab8a554.jpg'
-			]
-		},	
-		{
-			id: '1-p2',
-			date: '2026-02-19',
-			desc: '叶片展开过程对比',
-			images: [
-				'/static/flower/e0c65131708dbcea21fdb5a99a157ac4.jpg',
-				'/static/flower/4f068b19d4225040f35079b570587bfe.jpg'
-			]
-		}
-	]
+const resolveStatusValue = (status) => {
+	if (!status) return 'healthy'
+	const raw = `${status}`.trim()
+	if (!raw) return 'healthy'
+	return statusAliasMap[raw] || raw.toLowerCase()
 }
 
-const statsMap = {
-	1: { totalCareCount: 36, photoCount: 12, lastCareGap: 1, healthScore: '92' }
-}
+const currentStatusOption = computed(() => {
+	const value = resolveStatusValue(currentPlant.value.healthStatus)
+	return plantStatusOptions.find((item) => item.value === value) || plantStatusOptions[0]
+})
+
+const growthRecords = ref([])
+const growthRecordLoading = ref(false)
+const growthRecordPageNo = ref(1)
+const growthRecordPageSize = 10
+const growthRecordHasMore = ref(true)
+const albumRecords = ref([])
+const albumRecordLoading = ref(false)
+const albumRecordPageNo = ref(1)
+const albumRecordPageSize = 10
+const albumRecordHasMore = ref(true)
+
+const statsSummary = ref({
+	totalCareCount: 0,
+	photoCount: 0,
+	waterCount: 0,
+	lastCareGap: 0,
+	weekCareCount: 0,
+	wateringOutsideRecommendedCount: 0,
+	wateringTimeTip: '',
+	wateringTimeDistribution: [],
+	statusTimeDistribution: []
+})
+const monthlyStats = ref([])
 
 const careTaskOptions = [
 	{ key: 'water', label: '浇水', icon: '/static/icon/water.png' },
@@ -489,35 +560,266 @@ const currentPlant = computed(() => {
 
 const basicInfoItems = computed(() => {
 	return [
-		{ key: 'days', icon: 'clock-fill', value: `第 ${currentPlant.value.days} 天` },
-		{ key: 'cultivation', icon: 'grid-fill', value: currentPlant.value.cultivationLabel },
-		{ key: 'status', icon: 'checkmark-circle-fill', value: currentPlant.value.statusLabel }
+		{ key: 'days', icon: 'clock-fill', iconColor: '#4b9c72', value: `第 ${currentPlant.value.days} 天` },
+		{ key: 'cultivation', icon: 'home-fill', iconColor: '#4b9c72', value: currentPlant.value.cultivationLabel },
+		{ key: 'species', icon: 'bookmark-fill', iconColor: '#4b9c72', value: currentPlant.value.species || '未知品种' }
 	]
 })
 
-const growthRecords = computed(() => {
-	return growthRecordMap[currentPlantId.value] || growthRecordMap[1]
-})
-
-const photoRecords = computed(() => {
-	return photoRecordMap[currentPlantId.value] || photoRecordMap[1]
-})
-
-const statsSummary = computed(() => {
-	return statsMap[currentPlantId.value] || statsMap[1]
-})
+const photoRecords = computed(() => albumRecords.value)
 
 const currentTaskPlanMap = computed(() => {
 	if (!carePlanConfig.seasonalMode) return carePlanConfig.tasks
 	return carePlanConfig.seasonTasks[currentSeasonKey.value]
 })
 
+const monthlyBarMax = computed(() => {
+	const values = monthlyStats.value.map((item) => Number(item?.count || 0))
+	return Math.max(1, ...values)
+})
+
+const mapWateringSegmentLabel = (segment) => {
+	if (segment === 'morning') return '早上'
+	if (segment === 'daytime') return '白天'
+	if (segment === 'evening') return '晚上'
+	if (segment === 'night') return '夜间'
+	return segment || '未知'
+}
+
+const wateringTimeDistribution = computed(() => {
+	const raw = Array.isArray(statsSummary.value?.wateringTimeDistribution)
+		? statsSummary.value.wateringTimeDistribution
+		: []
+	return raw.map((item) => ({
+		segment: item?.segment || '',
+		label: mapWateringSegmentLabel(item?.segment || ''),
+		count: Number(item?.count || 0)
+	}))
+})
+
+const wateringTimeMax = computed(() => {
+	const values = wateringTimeDistribution.value.map((item) => Number(item?.count || 0))
+	return Math.max(1, ...values)
+})
+
+const healthStatusOrder = ['健康', '生病', '休眠', '已死亡', '已送人', '已售出']
+const healthStatusColorKeyMap = {
+	健康: 'healthy',
+	生病: 'sick',
+	休眠: 'dormant',
+	已死亡: 'dead',
+	已送人: 'gifted',
+	已售出: 'sold'
+}
+
+const healthStatusDistribution = computed(() => {
+	const raw = Array.isArray(statsSummary.value?.statusTimeDistribution)
+		? statsSummary.value.statusTimeDistribution
+		: []
+	const map = {}
+	raw.forEach((item) => {
+		const status = `${item?.status || ''}`.trim()
+		if (!status) return
+		map[status] = Number(item?.durationMinutes || 0)
+	})
+	const total = healthStatusOrder.reduce((sum, status) => sum + Number(map[status] || 0), 0)
+	return healthStatusOrder.map((status) => {
+		const minutes = Number(map[status] || 0)
+		const ratioNumber = total > 0 ? (minutes / total) * 100 : 0
+		const days = minutes / (24 * 60)
+		return {
+			key: healthStatusColorKeyMap[status] || 'healthy',
+			status,
+			minutes,
+			daysText: `${days >= 1 ? days.toFixed(1) : days.toFixed(2)}天`,
+			ratio: `${Math.max(total > 0 ? 4 : 0, Math.round(ratioNumber))}%`,
+			ratioText: `${Math.round(ratioNumber)}%`
+		}
+	})
+})
+
+const isAlwaysHealthyTimeline = computed(() => {
+	const list = healthStatusDistribution.value || []
+	if (!list.length) return false
+	const healthy = list.find((item) => item.status === '健康')
+	const healthyMinutes = Number(healthy?.minutes || 0)
+	if (healthyMinutes <= 0) return false
+	return list.every((item) => {
+		if (item.status === '健康') return true
+		return Number(item.minutes || 0) <= 0
+	})
+})
+
 const onTabChange = (index) => {
 	activeTabIndex.value = index
+	if (index === 0 && !growthRecords.value.length) {
+		resetGrowthRecords()
+		loadGrowthRecords()
+	}
+	if (index === 1 && !albumRecords.value.length) {
+		resetAlbumRecords()
+		loadAlbumRecords()
+	}
 }
 
 const onSeasonTabChange = (index) => {
 	activeSeasonIndex.value = index
+}
+
+const mapGrowthRecordItem = (item) => {
+	return {
+		id: item?.id || `${Date.now()}-${Math.random()}`,
+		name: item?.name || '养护记录',
+		icon: item?.icon || 'checkmark-circle-fill',
+		timeText: toDaysAgoText(item?.date),
+		date: item?.date || '',
+		content: item?.content || '已完成本次养护记录'
+	}
+}
+
+const toDaysAgoText = (dateText) => {
+	if (!dateText) return '今天'
+	try {
+		const normalized = `${dateText}`.trim().replace(/-/g, '/')
+		const targetDate = new Date(normalized)
+		if (Number.isNaN(targetDate.getTime())) return '今天'
+		const today = new Date()
+		const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+		const targetStart = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate())
+		const diff = Math.floor((todayStart.getTime() - targetStart.getTime()) / (24 * 60 * 60 * 1000))
+		if (diff <= 0) return '今天'
+		return `${diff}天前`
+	} catch (e) {
+		return '今天'
+	}
+}
+
+const resetGrowthRecords = () => {
+	growthRecords.value = []
+	growthRecordPageNo.value = 1
+	growthRecordHasMore.value = true
+}
+
+const loadGrowthRecords = () => {
+	if (growthRecordLoading.value || !growthRecordHasMore.value || !currentPlantId.value) return
+	growthRecordLoading.value = true
+	listPlantGrowthRecords(currentPlantId.value, growthRecordPageNo.value, growthRecordPageSize)
+		.then((data) => {
+			const list = Array.isArray(data?.list) ? data.list.map(mapGrowthRecordItem) : []
+			if (growthRecordPageNo.value === 1) {
+				growthRecords.value = list
+			} else {
+				growthRecords.value = growthRecords.value.concat(list)
+			}
+			growthRecordHasMore.value = !!data?.hasMore
+			if (data?.hasMore) {
+				growthRecordPageNo.value += 1
+			}
+		})
+		.catch((err) => {
+			uni.showToast({
+				title: err?.message || '加载记录失败',
+				icon: 'none'
+			})
+		})
+		.finally(() => {
+			growthRecordLoading.value = false
+		})
+}
+
+const mapAlbumRecordItem = (item) => {
+	return {
+		id: item?.id || `${Date.now()}-${Math.random()}`,
+		date: item?.date || '',
+		desc: item?.desc || '拍照记录',
+		images: Array.isArray(item?.images) ? item.images.filter(Boolean) : []
+	}
+}
+
+const resetAlbumRecords = () => {
+	albumRecords.value = []
+	albumRecordPageNo.value = 1
+	albumRecordHasMore.value = true
+}
+
+const loadAlbumRecords = () => {
+	if (albumRecordLoading.value || !albumRecordHasMore.value || !currentPlantId.value) return
+	albumRecordLoading.value = true
+	listPlantAlbumRecords(currentPlantId.value, albumRecordPageNo.value, albumRecordPageSize)
+		.then((data) => {
+			const list = Array.isArray(data?.list)
+				? data.list.map(mapAlbumRecordItem).filter((item) => item.images.length)
+				: []
+			if (albumRecordPageNo.value === 1) {
+				albumRecords.value = list
+			} else {
+				albumRecords.value = albumRecords.value.concat(list)
+			}
+			albumRecordHasMore.value = !!data?.hasMore
+			if (data?.hasMore) {
+				albumRecordPageNo.value += 1
+			}
+		})
+		.catch((err) => {
+			uni.showToast({
+				title: err?.message || '加载相册失败',
+				icon: 'none'
+			})
+		})
+		.finally(() => {
+			albumRecordLoading.value = false
+		})
+}
+
+const loadPlantStats = () => {
+	if (!currentPlantId.value) return
+	getPlantCareStats(currentPlantId.value)
+		.then((data) => {
+			statsSummary.value = {
+				totalCareCount: Number(data?.totalCareCount || 0),
+				photoCount: Number(data?.photoCount || 0),
+				waterCount: Number(data?.waterCount || 0),
+				lastCareGap: Number(data?.lastCareGap || 0),
+				weekCareCount: Number(data?.weekCareCount || 0),
+				wateringOutsideRecommendedCount: Number(data?.wateringOutsideRecommendedCount || 0),
+				wateringTimeTip: data?.wateringTimeTip || '',
+				wateringTimeDistribution: Array.isArray(data?.wateringTimeDistribution) ? data.wateringTimeDistribution : [],
+				statusTimeDistribution: Array.isArray(data?.statusTimeDistribution) ? data.statusTimeDistribution : []
+			}
+		})
+		.catch(() => {
+			statsSummary.value = {
+				totalCareCount: 0,
+				photoCount: 0,
+				waterCount: 0,
+				lastCareGap: 0,
+				weekCareCount: 0,
+				wateringOutsideRecommendedCount: 0,
+				wateringTimeTip: '',
+				wateringTimeDistribution: [],
+				statusTimeDistribution: []
+			}
+		})
+}
+
+const loadPlantMonthlyStats = () => {
+	if (!currentPlantId.value) return
+	getPlantMonthlyStats(currentPlantId.value, 6)
+		.then((list) => {
+			const rows = Array.isArray(list) ? list : []
+			monthlyStats.value = rows.map((item) => {
+				const monthText = `${item?.month || ''}`
+				const label = /^\d{4}-\d{2}$/.test(monthText) ? `${Number(monthText.slice(5, 7))}月` : monthText
+				return {
+					month: monthText,
+					label,
+					count: Number(item?.careCount || 0)
+				}
+			})
+		})
+		.catch(() => {
+			monthlyStats.value = []
+		})
 }
 
 const resetCarePlanConfig = () => {
@@ -679,6 +981,55 @@ const onToggleFocus = () => {
 	showFocusPopup.value = true
 }
 
+const buildPlantUpdatePayload = () => {
+	return {
+		name: currentPlant.value.name || '',
+		species: currentPlant.value.species || '',
+		image: currentPlant.value.image || '',
+		cultivationType: currentPlant.value.cultivationType || 'soil',
+		plantingDate: currentPlant.value.plantingDate || '',
+		note: currentPlant.value.note || '',
+		healthStatus: resolveStatusValue(currentPlant.value.healthStatus),
+		favorite: !!currentPlant.value.favorite
+	}
+}
+
+const onSwitchPlantStatus = () => {
+	if (switchingStatus.value) return
+	uni.showActionSheet({
+		itemList: plantStatusOptions.map((item) => item.label),
+		success: (res) => {
+			const next = plantStatusOptions[res?.tapIndex]
+			if (!next) return
+			const current = resolveStatusValue(currentPlant.value.healthStatus)
+			if (next.value === current) return
+			switchingStatus.value = true
+			updatePlant(currentPlant.value.id, {
+				...buildPlantUpdatePayload(),
+				healthStatus: next.value
+			})
+				.then((data) => {
+					currentPlant.value.healthStatus = data?.healthStatus || next.value
+					currentPlant.value.statusLabel = data?.statusLabel || next.label
+					loadPlantStats()
+					uni.showToast({
+						title: `已切换为${next.label}`,
+						icon: 'success'
+					})
+				})
+				.catch((err) => {
+					uni.showToast({
+						title: err?.message || '状态切换失败',
+						icon: 'none'
+					})
+				})
+				.finally(() => {
+					switchingStatus.value = false
+				})
+		}
+	})
+}
+
 const onPickFocusPhoto = () => {
 	uni.chooseImage({
 		count: 1,
@@ -693,14 +1044,14 @@ const onPickFocusPhoto = () => {
 const onSubmitFocus = () => {
 	if (!focusForm.photo) {
 		uni.showToast({
-			title: '请先上传关注照片',
+			title: '请先上传图片',
 			icon: 'none'
 		})
 		return
 	}
 	if (!focusForm.reason.trim()) {
 		uni.showToast({
-			title: '请填写关注原因',
+			title: '请填写备注',
 			icon: 'none'
 		})
 		return
@@ -735,6 +1086,13 @@ const onEditPlant = () => {
 }
 
 const onDeletePlant = () => {
+	if (!currentPlant.value?.id) {
+		uni.showToast({
+			title: '绿植信息异常，请稍后重试',
+			icon: 'none'
+		})
+		return
+	}
 	uni.showModal({
 		title: '删除绿植',
 		content: `确认删除「${currentPlant.value.name}」吗？`,
@@ -749,12 +1107,29 @@ const onDeletePlant = () => {
 					})
 					const payload = { id: currentPlant.value.id }
 					uni.$emit('plant:deleted', payload)
-					const eventChannel = getOpenerEventChannel && getOpenerEventChannel()
-					if (eventChannel) {
-						eventChannel.emit('plantDeleted', payload)
+					try {
+						const eventChannel = typeof uni.getOpenerEventChannel === 'function'
+							? uni.getOpenerEventChannel()
+							: null
+						if (eventChannel && typeof eventChannel.emit === 'function') {
+							eventChannel.emit('plantDeleted', payload)
+						}
+					} catch (e) {
+						// EventChannel is optional across entry paths, ignore when unavailable.
 					}
 					setTimeout(() => {
-						uni.navigateBack()
+						uni.switchTab({
+							url: '/pages/plant/plant',
+							fail: () => {
+								uni.navigateBack({
+									fail: () => {
+										uni.reLaunch({
+											url: '/pages/plant/plant'
+										})
+									}
+								})
+							}
+						})
 					}, 400)
 				})
 				.catch((err) => {
@@ -767,9 +1142,24 @@ const onDeletePlant = () => {
 	})
 }
 
+onReachBottom(() => {
+	if (activeTabIndex.value === 0) {
+		loadGrowthRecords()
+		return
+	}
+	if (activeTabIndex.value === 1) {
+		loadAlbumRecords()
+	}
+})
+
 onLoad((query) => {
 	const id = Number(query?.id || 1)
 	currentPlantId.value = Number.isNaN(id) ? 1 : id
+	resetGrowthRecords()
+	resetAlbumRecords()
+	loadGrowthRecords()
+	loadPlantStats()
+	loadPlantMonthlyStats()
 	getPlantById(currentPlantId.value)
 		.then((data) => {
 			currentPlantData.value = {
@@ -816,10 +1206,7 @@ onLoad((query) => {
 	}
 
 	.plant-name-row {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 12rpx;
+		display: block;
 	}
 
 	.plant-title-wrap {
@@ -839,15 +1226,16 @@ onLoad((query) => {
 		text-overflow: ellipsis;
 	}
 
-	.favorite-btn {
-		width: 40rpx;
-		height: 40rpx;
-		border-radius: 999rpx;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: #f7f9f8;
+	.focus-btn {
+		padding: 6rpx 12rpx;
+		font-size: 22rpx;
 		flex-shrink: 0;
+	}
+
+	.action-btn--focus-active {
+		background: #fff7e6;
+		border-color: #ffe7ba;
+		color: #d48806;
 	}
 
 	.focus-popup {
@@ -901,7 +1289,12 @@ onLoad((query) => {
 	.action-btn-wrap {
 		display: flex;
 		align-items: center;
+		justify-content: flex-start;
+		flex-wrap: nowrap;
 		gap: 8rpx;
+		margin-top: 10rpx;
+		overflow-x: auto;
+		padding-bottom: 2rpx;
 	}
 
 	.action-btn {
@@ -915,6 +1308,13 @@ onLoad((query) => {
 		font-size: 22rpx;
 		font-weight: 600;
 		color: #2f8f56;
+		white-space: nowrap;
+		flex-shrink: 0;
+	}
+
+	.status-btn {
+		min-width: 116rpx;
+		justify-content: center;
 	}
 
 	.action-btn--danger {
@@ -926,28 +1326,29 @@ onLoad((query) => {
 	.basic-info-grid {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 10rpx;
-		margin-top: 16rpx;
+		gap: 12rpx;
+		margin-top: 18rpx;
 	}
 
 	.basic-info-item {
 		display: inline-flex;
 		align-items: center;
-		gap: 6rpx;
-		padding: 8rpx 14rpx;
-		border-radius: 999rpx;
-		background: #eefbf3;
-		border: 1px solid #d7efdf;
+		gap: 8rpx;
+		padding: 10rpx 16rpx;
+		border-radius: 14rpx;
+		background: #ffffff;
+		border: 1px solid #e6ece8;
+		box-shadow: 0 2rpx 8rpx rgba(31, 49, 40, 0.04);
 	}
 
 	.info-value {
 		font-size: 24rpx;
-		font-weight: 600;
-		color: #294f38;
+		font-weight: 500;
+		color: #3d4a43;
 	}
 
 	.basic-info-item--status {
-		background: #e7f8ed;
+		background: #f7faf8;
 	}
 
 	.tab-wrap {
@@ -1007,6 +1408,15 @@ onLoad((query) => {
 		font-size: 24rpx;
 		color: #294f38;
 		line-height: 1.5;
+	}
+
+	.records-empty,
+	.records-loading,
+	.records-finished {
+		padding: 18rpx 0 10rpx;
+		text-align: center;
+		font-size: 22rpx;
+		color: #8a9790;
 	}
 
 	.plan-header {
@@ -1197,22 +1607,28 @@ onLoad((query) => {
 
 	.album-desc {
 		margin-top: 8rpx;
-		font-size: 24rpx;
+		font-size: 28rpx;
+		line-height: 1.5;
 		color: #294f38;
 	}
 
 	.stats-grid {
 		display: grid;
-		grid-template-columns: 1fr 1fr;
+		grid-template-columns: repeat(6, minmax(0, 1fr));
 		gap: 12rpx;
 	}
 
 	.stats-item {
+		grid-column: span 2;
 		padding: 14rpx 10rpx;
 		border-radius: 14rpx;
 		background: #eefbf3;
 		border: 1px solid #d7efdf;
 		text-align: center;
+	}
+
+	.stats-item:nth-child(n + 4) {
+		grid-column: span 3;
 	}
 
 	.stats-value {
@@ -1227,5 +1643,186 @@ onLoad((query) => {
 		margin-top: 6rpx;
 		font-size: 21rpx;
 		color: #5a6b60;
+	}
+
+	.stats-chart-wrap {
+		margin-top: 16rpx;
+		padding-top: 12rpx;
+		border-top: 1px solid #edf4ef;
+	}
+
+	.stats-chart-title {
+		font-size: 24rpx;
+		font-weight: 600;
+		color: #294f38;
+		margin-bottom: 10rpx;
+	}
+
+	.stats-chart {
+		display: grid;
+		grid-template-columns: repeat(6, minmax(0, 1fr));
+		gap: 10rpx;
+	}
+
+	.stats-chart-item {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 6rpx;
+	}
+
+	.stats-chart-value {
+		font-size: 20rpx;
+		color: #5a6b60;
+	}
+
+	.stats-chart-bar-bg {
+		width: 100%;
+		height: 120rpx;
+		border-radius: 12rpx;
+		background: #f1f8f4;
+		display: flex;
+		align-items: flex-end;
+		justify-content: center;
+		padding: 6rpx;
+		box-sizing: border-box;
+	}
+
+	.stats-chart-bar {
+		width: 100%;
+		border-radius: 8rpx;
+		background: linear-gradient(180deg, #62d08f 0%, #33c26d 100%);
+		min-height: 8rpx;
+	}
+
+	.stats-chart-label {
+		font-size: 20rpx;
+		color: #7f8f86;
+	}
+
+	.water-time-list {
+		display: flex;
+		flex-direction: column;
+		gap: 12rpx;
+	}
+
+	.water-time-item {
+		display: flex;
+		flex-direction: column;
+		gap: 6rpx;
+	}
+
+	.water-time-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.water-time-label {
+		font-size: 22rpx;
+		color: #3d4a43;
+	}
+
+	.water-time-count {
+		font-size: 20rpx;
+		color: #7c8b83;
+	}
+
+	.water-time-bar-bg {
+		width: 100%;
+		height: 16rpx;
+		border-radius: 999rpx;
+		background: #edf5f0;
+		overflow: hidden;
+	}
+
+	.water-time-bar {
+		height: 100%;
+		border-radius: 999rpx;
+		background: linear-gradient(90deg, #6ccf95 0%, #3ec577 100%);
+		min-width: 8%;
+	}
+
+	.water-time-tip {
+		margin-top: 12rpx;
+		padding: 12rpx 14rpx;
+		border-radius: 12rpx;
+		font-size: 21rpx;
+		line-height: 1.45;
+		color: #3e5f4c;
+		background: #edf9f1;
+		border: 1px solid #d7efdf;
+	}
+
+	.water-time-tip--warn {
+		color: #8a5a00;
+		background: #fff7e8;
+		border-color: #f8dfb0;
+	}
+
+	.health-status-list {
+		display: flex;
+		flex-direction: column;
+		gap: 12rpx;
+	}
+
+	.health-status-item {
+		display: flex;
+		flex-direction: column;
+		gap: 6rpx;
+	}
+
+	.health-status-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.health-status-label {
+		font-size: 22rpx;
+		color: #3d4a43;
+	}
+
+	.health-status-count {
+		font-size: 20rpx;
+		color: #7c8b83;
+	}
+
+	.health-status-bar-bg {
+		width: 100%;
+		height: 16rpx;
+		border-radius: 999rpx;
+		background: #edf5f0;
+		overflow: hidden;
+	}
+
+	.health-status-bar {
+		height: 100%;
+		border-radius: 999rpx;
+		min-width: 0;
+	}
+
+	.health-status-bar--healthy {
+		background: linear-gradient(90deg, #67cc91 0%, #38bf71 100%);
+	}
+
+	.health-status-bar--sick {
+		background: linear-gradient(90deg, #f08989 0%, #e05757 100%);
+	}
+
+	.health-status-bar--dormant {
+		background: linear-gradient(90deg, #f3bb75 0%, #e59a3b 100%);
+	}
+
+	.health-status-bar--dead {
+		background: linear-gradient(90deg, #b4bec3 0%, #8f9ca3 100%);
+	}
+
+	.health-status-bar--gifted {
+		background: linear-gradient(90deg, #8eb8ff 0%, #5e8ff3 100%);
+	}
+
+	.health-status-bar--sold {
+		background: linear-gradient(90deg, #b69ce8 0%, #8f72d8 100%);
 	}
 </style>
