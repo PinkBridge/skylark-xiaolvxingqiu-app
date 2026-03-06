@@ -15,13 +15,18 @@
 				</view>
 
 				<view class="coin-row coin-row-divider">
-					<text class="label">获取方式</text>
-					<text class="value">每日分享、绿植记录</text>
+					<text class="label">当前进度</text>
+					<text class="value">再完成 {{ nextCoinNeed }} 个养护活动可获得 1 星币</text>
 				</view>
 
 				<view class="coin-row">
 					<text class="label">使用说明</text>
 					<text class="value">在部分活动中可用于兑换绿植等商品。</text>
+				</view>
+
+				<view class="coin-row coin-row-divider">
+					<text class="label">累计养护结算活动数</text>
+					<text class="value">{{ completedActivityTotal }}</text>
 				</view>
 			</template>
 		</up-card>
@@ -30,8 +35,31 @@
 
 <script setup>
 import { ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
+import { getCoinAccount } from '@/api'
 
-const starCoinAmount = ref(1280)
+const starCoinAmount = ref(0)
+const nextCoinNeed = ref(20)
+const completedActivityTotal = ref(0)
+
+const loadCoinAccount = () => {
+	getCoinAccount()
+		.then((data) => {
+			starCoinAmount.value = Number(data?.coinBalance || 0)
+			nextCoinNeed.value = Number(data?.nextCoinNeed || 20)
+			completedActivityTotal.value = Number(data?.completedActivityTotal || 0)
+		})
+		.catch((err) => {
+			uni.showToast({
+				title: err?.message || '加载星币失败',
+				icon: 'none'
+			})
+		})
+}
+
+onShow(() => {
+	loadCoinAccount()
+})
 </script>
 
 <style scoped lang="scss">

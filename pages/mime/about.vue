@@ -16,13 +16,21 @@
 						<up-icon name="file-text" size="18" color="#33c26d" @tap="copyEmail"></up-icon>
 					</view>
 				</view>
+				<view class="qrcode-row">
+					<text class="contact-label">微信群</text>
+					<text class="qrcode-desc">识别二维码加入交流</text>
+					<view class="qrcode-wrap" @tap="previewGroupQr">
+						<image class="qrcode-image" :src="groupQrUrl" mode="aspectFit"></image>
+					</view>
+				</view>
 			</template>
 		</up-card>
 	</view>
 </template>
 
 <script setup>
-	const contactEmail = '13642245956@163.com'
+	const contactEmail = 'xiaolvxingqiu@163.com'
+	const groupQrUrl = '/static/image/wechat-group-qr.png'
 
 	const copyEmail = () => {
 		uni.setClipboardData({
@@ -33,6 +41,13 @@
 					icon: 'success'
 				})
 			}
+		})
+	}
+
+	const previewGroupQr = () => {
+		uni.previewImage({
+			current: groupQrUrl,
+			urls: [groupQrUrl]
 		})
 	}
 </script>
@@ -88,5 +103,35 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: 16rpx;
+	}
+
+	.qrcode-row {
+		margin-top: 22rpx;
+		padding-top: 16rpx;
+		border-top: 1px solid #eef4f0;
+	}
+
+	.qrcode-desc {
+		display: block;
+		margin-top: 8rpx;
+		font-size: 22rpx;
+		color: #7a8a82;
+	}
+
+	.qrcode-wrap {
+		margin-top: 12rpx;
+		width: 260rpx;
+		height: 260rpx;
+		padding: 10rpx;
+		background: #ffffff;
+		border-radius: 14rpx;
+		border: 1px solid #dff0e6;
+		box-sizing: border-box;
+	}
+
+	.qrcode-image {
+		width: 100%;
+		height: 100%;
+		display: block;
 	}
 </style>

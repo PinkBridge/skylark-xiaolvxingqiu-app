@@ -69,8 +69,13 @@ const submitFeedback = () => {
 	})
 		.then(() => {
 			uni.showToast({
-				title: '感谢反馈，我们会持续优化',
+				title: '提交成功',
 				icon: 'success'
+			})
+			uni.showModal({
+				title: '感谢反馈',
+				content: '感谢反馈，我们会持续优化。',
+				showCancel: false
 			})
 			form.content = ''
 			form.contact = ''

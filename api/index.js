@@ -58,5 +58,7 @@ export const getPlantMonthlyStats = (plantId, months = 6) =>
   http({ url: `/api/care/stats/monthly?plantId=${encodeURIComponent(plantId)}&months=${encodeURIComponent(months)}` })
 export const getCarePlanConfig = (plantId) => http({ url: `/api/care/plans/${plantId}` })
 export const saveCarePlanConfig = (plantId, data) => http({ url: `/api/care/plans/${plantId}`, method: 'PUT', data })
+export const getCoinAccount = () => http({ url: '/api/coin/account' })
 
 export const submitFeedbackApi = (data) => http({ url: '/api/feedback', method: 'POST', data })
+export const listFeedbackApi = () => http({ url: '/api/feedback' })
