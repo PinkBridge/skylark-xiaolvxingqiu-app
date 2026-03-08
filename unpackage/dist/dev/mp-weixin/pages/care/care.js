@@ -123,7 +123,7 @@ const _sfc_main = {
       note: ""
     });
     const shotForm = common_vendor.reactive({
-      photo: "",
+      photos: [],
       note: ""
     });
     const measureForm = common_vendor.reactive({
@@ -216,8 +216,12 @@ const _sfc_main = {
           parts.push(`处理：${record.treatment}`);
         return parts.join("，");
       }
-      if (name === "拍照")
-        return record.photo ? "已上传照片" : "";
+      if (name === "拍照") {
+        const count = Array.isArray(record.photos) ? record.photos.filter(Boolean).length : 0;
+        if (count > 0)
+          return `已上传${count}张照片`;
+        return record.photo ? "已上传1张照片" : "";
+      }
       if (name === "松土")
         return record.photo ? "已上传照片" : "";
       return "";
@@ -255,7 +259,7 @@ const _sfc_main = {
       repotForm.note = "";
     };
     const resetShotForm = () => {
-      shotForm.photo = "";
+      shotForm.photos = [];
       shotForm.note = "";
     };
     const resetMeasureForm = () => {
@@ -356,14 +360,24 @@ const _sfc_main = {
       showPhotoSourceSheet.value = true;
     };
     const onPhotoSourceSelect = (action) => {
+      var _a;
       showPhotoSourceSheet.value = false;
+      const remaining = 9 - (((_a = shotForm.photos) == null ? void 0 : _a.length) || 0);
+      if (photoUploadTarget.value === "shot" && remaining <= 0) {
+        common_vendor.index.showToast({
+          title: "最多上传9张图片",
+          icon: "none"
+        });
+        return;
+      }
+      const maxCount = photoUploadTarget.value === "shot" ? remaining : 1;
       common_vendor.index.chooseImage({
-        count: 1,
+        count: maxCount,
         sizeType: ["compressed"],
         sourceType: action.sourceType,
         success: (res) => {
-          var _a;
-          const photoPath = ((_a = res.tempFilePaths) == null ? void 0 : _a[0]) || "";
+          const picked = Array.isArray(res.tempFilePaths) ? res.tempFilePaths.filter(Boolean) : [];
+          const photoPath = picked[0] || "";
           if (photoUploadTarget.value === "fertilize") {
             fertilizeForm.photo = photoPath;
             return;
@@ -377,7 +391,7 @@ const _sfc_main = {
             return;
           }
           if (photoUploadTarget.value === "shot") {
-            shotForm.photo = photoPath;
+            shotForm.photos = [...shotForm.photos || [], ...picked].slice(0, 9);
             return;
           }
           if (photoUploadTarget.value === "measure") {
@@ -394,6 +408,19 @@ const _sfc_main = {
           }
           wateringForm.photo = photoPath;
         }
+      });
+    };
+    const onRemoveShotPhoto = (idx) => {
+      if (idx < 0 || idx >= shotForm.photos.length)
+        return;
+      shotForm.photos.splice(idx, 1);
+    };
+    const onPreviewShotPhoto = (idx) => {
+      if (idx < 0 || idx >= shotForm.photos.length)
+        return;
+      common_vendor.index.previewImage({
+        urls: shotForm.photos,
+        current: shotForm.photos[idx]
       });
     };
     const submitWateringRecord = () => {
@@ -477,7 +504,7 @@ const _sfc_main = {
     };
     const submitShotRecord = () => {
       var _a;
-      if (!shotForm.photo) {
+      if (!shotForm.photos.length) {
         common_vendor.index.showToast({
           title: "请先上传图片",
           icon: "none"
@@ -495,7 +522,8 @@ const _sfc_main = {
       if (!taskId)
         return;
       api_index.completeCareTask(taskId, {
-        photo: shotForm.photo || null,
+        photo: shotForm.photos[0] || null,
+        photos: shotForm.photos.length ? shotForm.photos : null,
         note: ((_a = shotForm.note) == null ? void 0 : _a.trim()) || null
       }).then(() => {
         showShotPopup.value = false;
@@ -1008,22 +1036,44 @@ const _sfc_main = {
           size: "16",
           color: "#8ea096"
         }),
-        aY: shotForm.photo
-      }, shotForm.photo ? {
-        aZ: shotForm.photo
-      } : {
-        ba: common_vendor.p({
+        aY: !shotForm.photos.length
+      }, !shotForm.photos.length ? {
+        aZ: common_vendor.p({
           name: "camera-fill",
+          size: "24",
+          color: "#33c26d"
+        }),
+        ba: common_vendor.o(($event) => openPhotoSourceSheet("shot"))
+      } : common_vendor.e({
+        bb: common_vendor.f(shotForm.photos, (photo, idx, i0) => {
+          return {
+            a: photo,
+            b: "866f8a92-59-" + i0 + ",866f8a92-57",
+            c: common_vendor.o(($event) => onRemoveShotPhoto(idx), `${photo}-${idx}`),
+            d: `${photo}-${idx}`,
+            e: common_vendor.o(($event) => onPreviewShotPhoto(idx), `${photo}-${idx}`)
+          };
+        }),
+        bc: common_vendor.p({
+          name: "close",
+          size: "10",
+          color: "#ffffff"
+        }),
+        bd: shotForm.photos.length < 9
+      }, shotForm.photos.length < 9 ? {
+        be: common_vendor.p({
+          name: "plus",
           size: "20",
           color: "#33c26d"
-        })
-      }, {
-        bb: common_vendor.o(($event) => openPhotoSourceSheet("shot")),
-        bc: common_vendor.p({
+        }),
+        bf: common_vendor.t(shotForm.photos.length),
+        bg: common_vendor.o(($event) => openPhotoSourceSheet("shot"))
+      } : {}), {
+        bh: common_vendor.p({
           label: "上传图片"
         }),
-        bd: common_vendor.o(($event) => shotForm.note = $event),
-        be: common_vendor.p({
+        bi: common_vendor.o(($event) => shotForm.note = $event),
+        bj: common_vendor.p({
           placeholder: "请输入拍照备注",
           border: "surround",
           height: "90",
@@ -1031,70 +1081,70 @@ const _sfc_main = {
           count: true,
           modelValue: shotForm.note
         }),
-        bf: common_vendor.p({
+        bk: common_vendor.p({
           label: "备注"
         }),
-        bg: common_vendor.p({
+        bl: common_vendor.p({
           model: shotForm,
           labelPosition: "top"
         }),
-        bh: common_vendor.o(submitShotRecord),
-        bi: common_vendor.p({
+        bm: common_vendor.o(submitShotRecord),
+        bn: common_vendor.p({
           type: "primary",
           text: "保存并完成",
           color: "#33c26d",
           shape: "circle"
         }),
-        bj: common_vendor.o(($event) => showShotPopup.value = false),
-        bk: common_vendor.p({
+        bo: common_vendor.o(($event) => showShotPopup.value = false),
+        bp: common_vendor.p({
           show: showShotPopup.value,
           mode: "bottom",
           round: "18"
         }),
-        bl: common_vendor.o(($event) => showMeasurePopup.value = false),
-        bm: common_vendor.p({
+        bq: common_vendor.o(($event) => showMeasurePopup.value = false),
+        br: common_vendor.p({
           name: "close",
           size: "16",
           color: "#8ea096"
         }),
-        bn: common_vendor.o(($event) => measureForm.weight = $event),
-        bo: common_vendor.p({
+        bs: common_vendor.o(($event) => measureForm.weight = $event),
+        bt: common_vendor.p({
           type: "number",
           placeholder: "请输入重量，如 1250（g）",
           border: "surround",
           clearable: true,
           modelValue: measureForm.weight
         }),
-        bp: common_vendor.p({
+        bv: common_vendor.p({
           label: "重量（含花盆）"
         }),
-        bq: common_vendor.o(($event) => measureForm.height = $event),
-        br: common_vendor.p({
+        bw: common_vendor.o(($event) => measureForm.height = $event),
+        bx: common_vendor.p({
           type: "number",
           placeholder: "请输入高度，如 35（cm）",
           border: "surround",
           clearable: true,
           modelValue: measureForm.height
         }),
-        bs: common_vendor.p({
+        by: common_vendor.p({
           label: "高度"
         }),
-        bt: measureForm.photo
+        bz: measureForm.photo
       }, measureForm.photo ? {
-        bv: measureForm.photo
+        bA: measureForm.photo
       } : {
-        bw: common_vendor.p({
+        bB: common_vendor.p({
           name: "camera-fill",
           size: "20",
           color: "#33c26d"
         })
       }, {
-        bx: common_vendor.o(($event) => openPhotoSourceSheet("measure")),
-        by: common_vendor.p({
+        bC: common_vendor.o(($event) => openPhotoSourceSheet("measure")),
+        bD: common_vendor.p({
           label: "添加照片"
         }),
-        bz: common_vendor.o(($event) => measureForm.note = $event),
-        bA: common_vendor.p({
+        bE: common_vendor.o(($event) => measureForm.note = $event),
+        bF: common_vendor.p({
           placeholder: "选填：记录环境、温湿度等",
           border: "surround",
           height: "90",
@@ -1102,48 +1152,48 @@ const _sfc_main = {
           count: true,
           modelValue: measureForm.note
         }),
-        bB: common_vendor.p({
+        bG: common_vendor.p({
           label: "备注"
         }),
-        bC: common_vendor.p({
+        bH: common_vendor.p({
           model: measureForm,
           labelPosition: "top"
         }),
-        bD: common_vendor.o(submitMeasureRecord),
-        bE: common_vendor.p({
+        bI: common_vendor.o(submitMeasureRecord),
+        bJ: common_vendor.p({
           type: "primary",
           text: "保存并完成",
           color: "#33c26d",
           shape: "circle"
         }),
-        bF: common_vendor.o(($event) => showMeasurePopup.value = false),
-        bG: common_vendor.p({
+        bK: common_vendor.o(($event) => showMeasurePopup.value = false),
+        bL: common_vendor.p({
           show: showMeasurePopup.value,
           mode: "bottom",
           round: "18"
         }),
-        bH: common_vendor.o(($event) => showLoosenPopup.value = false),
-        bI: common_vendor.p({
+        bM: common_vendor.o(($event) => showLoosenPopup.value = false),
+        bN: common_vendor.p({
           name: "close",
           size: "16",
           color: "#8ea096"
         }),
-        bJ: loosenForm.photo
+        bO: loosenForm.photo
       }, loosenForm.photo ? {
-        bK: loosenForm.photo
+        bP: loosenForm.photo
       } : {
-        bL: common_vendor.p({
+        bQ: common_vendor.p({
           name: "camera-fill",
           size: "20",
           color: "#33c26d"
         })
       }, {
-        bM: common_vendor.o(($event) => openPhotoSourceSheet("loosen")),
-        bN: common_vendor.p({
+        bR: common_vendor.o(($event) => openPhotoSourceSheet("loosen")),
+        bS: common_vendor.p({
           label: "上传图片"
         }),
-        bO: common_vendor.o(($event) => loosenForm.note = $event),
-        bP: common_vendor.p({
+        bT: common_vendor.o(($event) => loosenForm.note = $event),
+        bU: common_vendor.p({
           placeholder: "请输入松土备注",
           border: "surround",
           height: "90",
@@ -1151,70 +1201,70 @@ const _sfc_main = {
           count: true,
           modelValue: loosenForm.note
         }),
-        bQ: common_vendor.p({
+        bV: common_vendor.p({
           label: "备注"
         }),
-        bR: common_vendor.p({
+        bW: common_vendor.p({
           model: loosenForm,
           labelPosition: "top"
         }),
-        bS: common_vendor.o(submitLoosenRecord),
-        bT: common_vendor.p({
+        bX: common_vendor.o(submitLoosenRecord),
+        bY: common_vendor.p({
           type: "primary",
           text: "保存并完成",
           color: "#33c26d",
           shape: "circle"
         }),
-        bU: common_vendor.o(($event) => showLoosenPopup.value = false),
-        bV: common_vendor.p({
+        bZ: common_vendor.o(($event) => showLoosenPopup.value = false),
+        ca: common_vendor.p({
           show: showLoosenPopup.value,
           mode: "bottom",
           round: "18"
         }),
-        bW: common_vendor.o(($event) => showBugPopup.value = false),
-        bX: common_vendor.p({
+        cb: common_vendor.o(($event) => showBugPopup.value = false),
+        cc: common_vendor.p({
           name: "close",
           size: "16",
           color: "#8ea096"
         }),
-        bY: common_vendor.t(bugForm.type || "请选择病虫害类型"),
-        bZ: common_vendor.n(bugForm.type ? "select-text" : "select-placeholder"),
-        ca: common_vendor.p({
-          name: "arrow-right",
-          size: "14",
-          color: "#7bc59a"
-        }),
-        cb: common_vendor.o(($event) => showBugTypeSheet.value = true),
-        cc: common_vendor.p({
-          label: "病虫害类型"
-        }),
-        cd: common_vendor.t(bugForm.treatment || "请选择处理方式"),
-        ce: common_vendor.n(bugForm.treatment ? "select-text" : "select-placeholder"),
+        cd: common_vendor.t(bugForm.type || "请选择病虫害类型"),
+        ce: common_vendor.n(bugForm.type ? "select-text" : "select-placeholder"),
         cf: common_vendor.p({
           name: "arrow-right",
           size: "14",
           color: "#7bc59a"
         }),
-        cg: common_vendor.o(($event) => showBugTreatmentSheet.value = true),
+        cg: common_vendor.o(($event) => showBugTypeSheet.value = true),
         ch: common_vendor.p({
+          label: "病虫害类型"
+        }),
+        ci: common_vendor.t(bugForm.treatment || "请选择处理方式"),
+        cj: common_vendor.n(bugForm.treatment ? "select-text" : "select-placeholder"),
+        ck: common_vendor.p({
+          name: "arrow-right",
+          size: "14",
+          color: "#7bc59a"
+        }),
+        cl: common_vendor.o(($event) => showBugTreatmentSheet.value = true),
+        cm: common_vendor.p({
           label: "处理方式"
         }),
-        ci: bugForm.photo
+        cn: bugForm.photo
       }, bugForm.photo ? {
-        cj: bugForm.photo
+        co: bugForm.photo
       } : {
-        ck: common_vendor.p({
+        cp: common_vendor.p({
           name: "camera-fill",
           size: "20",
           color: "#33c26d"
         })
       }, {
-        cl: common_vendor.o(($event) => openPhotoSourceSheet("bug")),
-        cm: common_vendor.p({
+        cq: common_vendor.o(($event) => openPhotoSourceSheet("bug")),
+        cr: common_vendor.p({
           label: "添加照片"
         }),
-        cn: common_vendor.o(($event) => bugForm.note = $event),
-        co: common_vendor.p({
+        cs: common_vendor.o(($event) => bugForm.note = $event),
+        ct: common_vendor.p({
           placeholder: "选填：记录症状和处理反馈",
           border: "surround",
           height: "90",
@@ -1222,55 +1272,55 @@ const _sfc_main = {
           count: true,
           modelValue: bugForm.note
         }),
-        cp: common_vendor.p({
+        cv: common_vendor.p({
           label: "备注"
         }),
-        cq: common_vendor.p({
+        cw: common_vendor.p({
           model: bugForm,
           labelPosition: "top"
         }),
-        cr: common_vendor.o(submitBugRecord),
-        cs: common_vendor.p({
+        cx: common_vendor.o(submitBugRecord),
+        cy: common_vendor.p({
           type: "primary",
           text: "保存并完成",
           color: "#33c26d",
           shape: "circle"
         }),
-        ct: common_vendor.o(($event) => showBugPopup.value = false),
-        cv: common_vendor.p({
+        cz: common_vendor.o(($event) => showBugPopup.value = false),
+        cA: common_vendor.p({
           show: showBugPopup.value,
           mode: "bottom",
           round: "18"
         }),
-        cw: common_vendor.o(onPhotoSourceSelect),
-        cx: common_vendor.o(($event) => showPhotoSourceSheet.value = false),
-        cy: common_vendor.p({
+        cB: common_vendor.o(onPhotoSourceSelect),
+        cC: common_vendor.o(($event) => showPhotoSourceSheet.value = false),
+        cD: common_vendor.p({
           show: showPhotoSourceSheet.value,
           actions: photoSourceActions,
           cancelText: "取消"
         }),
-        cz: common_vendor.o(onFertilizeMaterialSelect),
-        cA: common_vendor.o(($event) => showFertilizeMaterialSheet.value = false),
-        cB: common_vendor.p({
+        cE: common_vendor.o(onFertilizeMaterialSelect),
+        cF: common_vendor.o(($event) => showFertilizeMaterialSheet.value = false),
+        cG: common_vendor.p({
           show: showFertilizeMaterialSheet.value,
           actions: common_vendor.unref(fertilizeMaterialActions),
           cancelText: "取消"
         }),
-        cC: common_vendor.o(onBugTypeSelect),
-        cD: common_vendor.o(($event) => showBugTypeSheet.value = false),
-        cE: common_vendor.p({
+        cH: common_vendor.o(onBugTypeSelect),
+        cI: common_vendor.o(($event) => showBugTypeSheet.value = false),
+        cJ: common_vendor.p({
           show: showBugTypeSheet.value,
           actions: common_vendor.unref(bugTypeActions),
           cancelText: "取消"
         }),
-        cF: common_vendor.o(onBugTreatmentSelect),
-        cG: common_vendor.o(($event) => showBugTreatmentSheet.value = false),
-        cH: common_vendor.p({
+        cK: common_vendor.o(onBugTreatmentSelect),
+        cL: common_vendor.o(($event) => showBugTreatmentSheet.value = false),
+        cM: common_vendor.p({
           show: showBugTreatmentSheet.value,
           actions: common_vendor.unref(bugTreatmentActions),
           cancelText: "取消"
         }),
-        cI: `${navMetrics.value.navBarHeight + 12}px`
+        cN: `${navMetrics.value.navBarHeight + 12}px`
       });
     };
   }

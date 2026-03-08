@@ -7,6 +7,12 @@
 			}
 		},
 		{
+			"path": "pages/auth/wechat-entry",
+			"style": {
+				"navigationBarTitleText": "微信授权"
+			}
+		},
+		{
 			"path": "pages/care/care",
 			"style": {
 				"navigationBarTitleText": "养护管理",

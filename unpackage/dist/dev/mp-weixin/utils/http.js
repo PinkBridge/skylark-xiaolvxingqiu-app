@@ -1,6 +1,6 @@
 "use strict";
 const common_vendor = require("../common/vendor.js");
-const BASE_URL = "http://localhost:8086/xiaolvxingqiu";
+const BASE_URL = "http://localhost:8080";
 const http = ({ url, method = "GET", data, header = {} }) => {
   return new Promise((resolve, reject) => {
     common_vendor.index.request({

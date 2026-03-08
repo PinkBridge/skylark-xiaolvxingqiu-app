@@ -1,6 +1,7 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
 const api_index = require("../../api/index.js");
+const utils_auth = require("../../utils/auth.js");
 if (!Array) {
   const _easycom_up_icon2 = common_vendor.resolveComponent("up-icon");
   const _easycom_up_form_item2 = common_vendor.resolveComponent("up-form-item");
@@ -34,7 +35,8 @@ const _sfc_main = {
       name: "",
       gender: "male",
       birthday: "",
-      motto: "每一份生命都值得尊重和呵护!"
+      motto: "每一份生命都值得尊重和呵护!",
+      phone: ""
     });
     const genderIndex = common_vendor.ref(0);
     const showDatePicker = common_vendor.ref(false);
@@ -46,9 +48,19 @@ const _sfc_main = {
         form.gender = (savedProfile == null ? void 0 : savedProfile.gender) || "male";
         form.birthday = (savedProfile == null ? void 0 : savedProfile.birthday) || "";
         form.motto = (savedProfile == null ? void 0 : savedProfile.motto) || form.motto;
+        form.phone = (savedProfile == null ? void 0 : savedProfile.phone) || "";
         const index = genderValues.findIndex((item) => item === form.gender);
         genderIndex.value = index > -1 ? index : 0;
       }).catch(() => {
+        const cached = utils_auth.readCachedWxProfile();
+        if (!cached)
+          return;
+        form.avatar = (cached == null ? void 0 : cached.avatar) || form.avatar;
+        form.name = (cached == null ? void 0 : cached.name) || form.name;
+        form.gender = (cached == null ? void 0 : cached.gender) || form.gender;
+        form.phone = (cached == null ? void 0 : cached.phone) || form.phone;
+        const index = genderValues.findIndex((item) => item === form.gender);
+        genderIndex.value = index > -1 ? index : 0;
       });
     };
     loadProfile();
@@ -96,8 +108,15 @@ const _sfc_main = {
         name: form.name.trim(),
         gender: form.gender,
         birthday: form.birthday,
-        motto: form.motto.trim() || "每一份生命都值得尊重和呵护!"
+        motto: form.motto.trim() || "每一份生命都值得尊重和呵护!",
+        phone: form.phone || ""
       }).then(() => {
+        utils_auth.saveWxAuthProfile({
+          avatar: form.avatar || defaultAvatar,
+          name: form.name.trim(),
+          gender: form.gender,
+          phone: form.phone || ""
+        });
         common_vendor.index.showToast({
           title: "保存成功",
           icon: "success"
@@ -162,8 +181,19 @@ const _sfc_main = {
           label: "生日",
           borderBottom: true
         }),
-        p: common_vendor.o(($event) => form.motto = $event),
+        p: common_vendor.o(($event) => form.phone = $event),
         q: common_vendor.p({
+          placeholder: "微信授权手机号",
+          border: "none",
+          disabled: true,
+          modelValue: form.phone
+        }),
+        r: common_vendor.p({
+          label: "手机号",
+          borderBottom: true
+        }),
+        s: common_vendor.o(($event) => form.motto = $event),
+        t: common_vendor.p({
           placeholder: "写点和绿植有关的小心情吧",
           border: "surround",
           height: "100",
@@ -171,26 +201,26 @@ const _sfc_main = {
           count: true,
           modelValue: form.motto
         }),
-        r: common_vendor.p({
+        v: common_vendor.p({
           label: "签名",
           borderBottom: true
         }),
-        s: common_vendor.p({
+        w: common_vendor.p({
           model: form,
           labelPosition: "left",
           labelWidth: "140rpx"
         }),
-        t: common_vendor.o(saveProfile),
-        v: common_vendor.p({
+        x: common_vendor.o(saveProfile),
+        y: common_vendor.p({
           type: "primary",
           text: "保存信息",
           color: "#33c26d",
           shape: "circle"
         }),
-        w: common_vendor.o(onDateConfirm),
-        x: common_vendor.o(($event) => showDatePicker.value = false),
-        y: common_vendor.o(($event) => showDatePicker.value = false),
-        z: common_vendor.p({
+        z: common_vendor.o(onDateConfirm),
+        A: common_vendor.o(($event) => showDatePicker.value = false),
+        B: common_vendor.o(($event) => showDatePicker.value = false),
+        C: common_vendor.p({
           show: showDatePicker.value,
           value: datePickerValue.value,
           mode: "date"

@@ -1,6 +1,7 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
 const api_index = require("../../api/index.js");
+const utils_auth = require("../../utils/auth.js");
 if (!Array) {
   const _easycom_up_icon2 = common_vendor.resolveComponent("up-icon");
   const _easycom_up_gap2 = common_vendor.resolveComponent("up-gap");
@@ -37,6 +38,15 @@ const _sfc_main = {
           avatar: (savedProfile == null ? void 0 : savedProfile.avatar) || defaultAvatar
         };
       }).catch(() => {
+        const cached = utils_auth.readCachedWxProfile();
+        if (!cached)
+          return;
+        profile.value = {
+          name: (cached == null ? void 0 : cached.name) || profile.value.name,
+          gender: (cached == null ? void 0 : cached.gender) || profile.value.gender,
+          motto: profile.value.motto,
+          avatar: (cached == null ? void 0 : cached.avatar) || defaultAvatar
+        };
       });
     };
     common_vendor.onShow(() => {

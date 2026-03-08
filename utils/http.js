@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:8086/xiaolvxingqiu'
+const BASE_URL = 'http://localhost:8080'
 
 export const http = ({ url, method = 'GET', data, header = {} }) => {
   return new Promise((resolve, reject) => {

@@ -39,6 +39,10 @@
 				</view>
 			</up-form-item>
 
+			<up-form-item label="手机号" borderBottom>
+				<up-input v-model="form.phone" placeholder="微信授权手机号" border="none" disabled></up-input>
+			</up-form-item>
+
 			<up-form-item label="签名" borderBottom>
 				<up-textarea
 					v-model="form.motto"
@@ -75,6 +79,7 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { getUserProfile, updateUserProfile } from '@/api'
+import { readCachedWxProfile, saveWxAuthProfile } from '@/utils/auth'
 
 const defaultAvatar = 'https://cdn.uviewui.com/uview/example/button.png'
 const genderOptions = ['男', '女', '保密']
@@ -85,7 +90,8 @@ const form = reactive({
 	name: '',
 	gender: 'male',
 	birthday: '',
-	motto: '每一份生命都值得尊重和呵护!'
+	motto: '每一份生命都值得尊重和呵护!',
+	phone: ''
 })
 
 const genderIndex = ref(0)
@@ -100,11 +106,21 @@ const loadProfile = () => {
 			form.gender = savedProfile?.gender || 'male'
 			form.birthday = savedProfile?.birthday || ''
 			form.motto = savedProfile?.motto || form.motto
+			form.phone = savedProfile?.phone || ''
 
 			const index = genderValues.findIndex((item) => item === form.gender)
 			genderIndex.value = index > -1 ? index : 0
 		})
-		.catch(() => {})
+		.catch(() => {
+			const cached = readCachedWxProfile()
+			if (!cached) return
+			form.avatar = cached?.avatar || form.avatar
+			form.name = cached?.name || form.name
+			form.gender = cached?.gender || form.gender
+			form.phone = cached?.phone || form.phone
+			const index = genderValues.findIndex((item) => item === form.gender)
+			genderIndex.value = index > -1 ? index : 0
+		})
 }
 
 loadProfile()
@@ -158,9 +174,16 @@ const saveProfile = () => {
 		name: form.name.trim(),
 		gender: form.gender,
 		birthday: form.birthday,
-		motto: form.motto.trim() || '每一份生命都值得尊重和呵护!'
+		motto: form.motto.trim() || '每一份生命都值得尊重和呵护!',
+		phone: form.phone || ''
 	})
 		.then(() => {
+			saveWxAuthProfile({
+				avatar: form.avatar || defaultAvatar,
+				name: form.name.trim(),
+				gender: form.gender,
+				phone: form.phone || ''
+			})
 			uni.showToast({
 				title: '保存成功',
 				icon: 'success'

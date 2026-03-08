@@ -1,11 +1,14 @@
 "use strict";
 const utils_http = require("../utils/http.js");
-const getGardenInfo = () => utils_http.http({ url: "/api/garden" });
-const updateGardenInfo = (data) => utils_http.http({ url: "/api/garden", method: "PUT", data });
-const createGarden = (data) => utils_http.http({ url: "/api/gardens", method: "POST", data });
-const listGardens = () => utils_http.http({ url: "/api/gardens" });
-const getUserProfile = () => utils_http.http({ url: "/api/profile" });
-const updateUserProfile = (data) => utils_http.http({ url: "/api/profile", method: "PUT", data });
+const BIZ_PREFIX = "/api/xiaolvxingqiu";
+const bizUrl = (path) => `${BIZ_PREFIX}${path}`;
+const getGardenInfo = () => utils_http.http({ url: bizUrl("/garden") });
+const updateGardenInfo = (data) => utils_http.http({ url: bizUrl("/garden"), method: "PUT", data });
+const createGarden = (data) => utils_http.http({ url: bizUrl("/gardens"), method: "POST", data });
+const listGardens = () => utils_http.http({ url: bizUrl("/gardens") });
+const getUserProfile = () => utils_http.http({ url: bizUrl("/profile") });
+const updateUserProfile = (data) => utils_http.http({ url: bizUrl("/profile"), method: "PUT", data });
+const authWechatPhone = (data) => utils_http.http({ url: bizUrl("/auth/wechat/phone"), method: "POST", data });
 const listPlants = (filter, gardenId) => {
   const params = [];
   if (filter)
@@ -15,50 +18,61 @@ const listPlants = (filter, gardenId) => {
   }
   const query = params.length ? `?${params.join("&")}` : "";
   return utils_http.http({
-    url: `/api/plants${query}`
+    url: bizUrl(`/plants${query}`)
   });
 };
-const getPlantById = (id) => utils_http.http({ url: `/api/plants/${id}` });
-const createPlant = (data) => utils_http.http({ url: "/api/plants", method: "POST", data });
-const updatePlant = (id, data) => utils_http.http({ url: `/api/plants/${id}`, method: "PUT", data });
-const deletePlant = (id) => utils_http.http({ url: `/api/plants/${id}`, method: "DELETE" });
-const setPlantFocus = (id, data) => utils_http.http({ url: `/api/plants/${id}/focus`, method: "PUT", data });
-const clearPlantFocus = (id) => utils_http.http({ url: `/api/plants/${id}/focus`, method: "DELETE" });
+const getPlantById = (id) => utils_http.http({ url: bizUrl(`/plants/${id}`) });
+const createPlant = (data) => utils_http.http({ url: bizUrl("/plants"), method: "POST", data });
+const updatePlant = (id, data) => utils_http.http({ url: bizUrl(`/plants/${id}`), method: "PUT", data });
+const deletePlant = (id) => utils_http.http({ url: bizUrl(`/plants/${id}`), method: "DELETE" });
+const setPlantFocus = (id, data) => utils_http.http({ url: bizUrl(`/plants/${id}/focus`), method: "PUT", data });
+const clearPlantFocus = (id) => utils_http.http({ url: bizUrl(`/plants/${id}/focus`), method: "DELETE" });
 const listCareTasks = (gardenId) => {
   const query = gardenId !== void 0 && gardenId !== null && `${gardenId}` !== "" ? `?gardenId=${encodeURIComponent(gardenId)}` : "";
-  return utils_http.http({ url: `/api/care/tasks${query}` });
+  return utils_http.http({ url: bizUrl(`/care/tasks${query}`) });
 };
-const completeCareTask = (taskId, data) => utils_http.http({ url: `/api/care/tasks/${taskId}/complete`, method: "POST", data });
+const completeCareTask = (taskId, data) => utils_http.http({ url: bizUrl(`/care/tasks/${taskId}/complete`), method: "POST", data });
 const listCareActivitiesByDate = (date, gardenId) => {
   const params = [`date=${encodeURIComponent(date)}`];
   if (gardenId !== void 0 && gardenId !== null && `${gardenId}` !== "") {
     params.push(`gardenId=${encodeURIComponent(gardenId)}`);
   }
-  return utils_http.http({ url: `/api/care/activities?${params.join("&")}` });
+  return utils_http.http({ url: bizUrl(`/care/activities?${params.join("&")}`) });
 };
 const listCareActivitiesByMonth = (month, gardenId) => {
   const params = [`month=${encodeURIComponent(month)}`];
   if (gardenId !== void 0 && gardenId !== null && `${gardenId}` !== "") {
     params.push(`gardenId=${encodeURIComponent(gardenId)}`);
   }
-  return utils_http.http({ url: `/api/care/activities?${params.join("&")}` });
+  return utils_http.http({ url: bizUrl(`/care/activities?${params.join("&")}`) });
 };
-const getCarePlanConfig = (plantId) => utils_http.http({ url: `/api/care/plans/${plantId}` });
-const saveCarePlanConfig = (plantId, data) => utils_http.http({ url: `/api/care/plans/${plantId}`, method: "PUT", data });
-const submitFeedbackApi = (data) => utils_http.http({ url: "/api/feedback", method: "POST", data });
+const listPlantGrowthRecords = (plantId, pageNo = 1, pageSize = 10) => utils_http.http({ url: bizUrl(`/care/records?plantId=${encodeURIComponent(plantId)}&pageNo=${encodeURIComponent(pageNo)}&pageSize=${encodeURIComponent(pageSize)}`) });
+const listPlantAlbumRecords = (plantId, pageNo = 1, pageSize = 10) => utils_http.http({ url: bizUrl(`/care/albums?plantId=${encodeURIComponent(plantId)}&pageNo=${encodeURIComponent(pageNo)}&pageSize=${encodeURIComponent(pageSize)}`) });
+const getPlantCareStats = (plantId) => utils_http.http({ url: bizUrl(`/care/stats?plantId=${encodeURIComponent(plantId)}`) });
+const getPlantMonthlyStats = (plantId, months = 6) => utils_http.http({ url: bizUrl(`/care/stats/monthly?plantId=${encodeURIComponent(plantId)}&months=${encodeURIComponent(months)}`) });
+const getCarePlanConfig = (plantId) => utils_http.http({ url: bizUrl(`/care/plans/${plantId}`) });
+const saveCarePlanConfig = (plantId, data) => utils_http.http({ url: bizUrl(`/care/plans/${plantId}`), method: "PUT", data });
+const getCoinAccount = () => utils_http.http({ url: bizUrl("/coin/account") });
+const submitFeedbackApi = (data) => utils_http.http({ url: bizUrl("/feedback"), method: "POST", data });
+exports.authWechatPhone = authWechatPhone;
 exports.clearPlantFocus = clearPlantFocus;
 exports.completeCareTask = completeCareTask;
 exports.createGarden = createGarden;
 exports.createPlant = createPlant;
 exports.deletePlant = deletePlant;
 exports.getCarePlanConfig = getCarePlanConfig;
+exports.getCoinAccount = getCoinAccount;
 exports.getGardenInfo = getGardenInfo;
 exports.getPlantById = getPlantById;
+exports.getPlantCareStats = getPlantCareStats;
+exports.getPlantMonthlyStats = getPlantMonthlyStats;
 exports.getUserProfile = getUserProfile;
 exports.listCareActivitiesByDate = listCareActivitiesByDate;
 exports.listCareActivitiesByMonth = listCareActivitiesByMonth;
 exports.listCareTasks = listCareTasks;
 exports.listGardens = listGardens;
+exports.listPlantAlbumRecords = listPlantAlbumRecords;
+exports.listPlantGrowthRecords = listPlantGrowthRecords;
 exports.listPlants = listPlants;
 exports.saveCarePlanConfig = saveCarePlanConfig;
 exports.setPlantFocus = setPlantFocus;

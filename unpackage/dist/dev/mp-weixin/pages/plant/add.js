@@ -46,6 +46,17 @@ const _sfc_main = {
     ];
     const showDatePicker = common_vendor.ref(false);
     const datePickerValue = common_vendor.ref(Date.now());
+    const resetPlantForm = () => {
+      editPlantId.value = "";
+      plantForm.image = "";
+      plantForm.name = "";
+      plantForm.species = "";
+      plantForm.cultivationType = "soil";
+      plantForm.plantingDate = "";
+      plantForm.note = "";
+      cultivationIndex.value = 0;
+      datePickerValue.value = Date.now();
+    };
     const onCultivationChange = (index) => {
       cultivationIndex.value = index;
       plantForm.cultivationType = index === 0 ? "soil" : "water";
@@ -104,7 +115,7 @@ const _sfc_main = {
           icon: "success"
         });
         setTimeout(() => {
-          common_vendor.index.redirectTo({
+          common_vendor.index.switchTab({
             url: "/pages/plant/plant"
           });
         }, 500);
@@ -116,6 +127,7 @@ const _sfc_main = {
       });
     };
     common_vendor.onLoad((query) => {
+      resetPlantForm();
       const id = query == null ? void 0 : query.id;
       if (!id)
         return;

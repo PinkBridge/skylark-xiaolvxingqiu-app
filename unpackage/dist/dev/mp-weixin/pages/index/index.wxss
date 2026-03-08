@@ -25,8 +25,74 @@
 /* 文章场景相关 */
 .index-page.data-v-1cf27b2a {
   min-height: 100vh;
-  padding: 20rpx 24rpx 24rpx;
+  padding: 20rpx 24rpx 180rpx;
   background: #f6fcf8;
+}
+.top-toolbar.data-v-1cf27b2a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14rpx;
+}
+.toolbar-spacer.data-v-1cf27b2a {
+  width: 1rpx;
+  height: 1rpx;
+}
+.toolbar-actions.data-v-1cf27b2a {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+.toolbar-btn.data-v-1cf27b2a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6rpx;
+  padding: 8rpx 14rpx;
+  border-radius: 999rpx;
+  background: #eefbf3;
+  border: 1px solid #d7efdf;
+  font-size: 22rpx;
+  font-weight: 600;
+  color: #2f8f56;
+}
+.toolbar-btn--button.data-v-1cf27b2a {
+  line-height: normal;
+  margin: 0;
+}
+.toolbar-btn--button.data-v-1cf27b2a::after {
+  border: none;
+}
+.recognize-fixed-wrap.data-v-1cf27b2a {
+  position: fixed;
+  left: 24rpx;
+  right: 24rpx;
+  bottom: 120rpx;
+  z-index: 98;
+  display: flex;
+  justify-content: center;
+}
+.recognize-btn.data-v-1cf27b2a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  min-width: 220rpx;
+  height: 78rpx;
+  padding: 0 26rpx;
+  border-radius: 999rpx;
+  background: linear-gradient(135deg, #33c26d 0%, #27a95b 100%);
+  box-shadow: 0 12rpx 24rpx rgba(51, 194, 109, 0.28);
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #ffffff;
+}
+.recognize-btn--button.data-v-1cf27b2a {
+  line-height: normal;
+  margin: 0;
+  border: none;
+}
+.recognize-btn--button.data-v-1cf27b2a::after {
+  border: none;
 }
 .garden-list.data-v-1cf27b2a {
   display: flex;
@@ -134,20 +200,6 @@
 }
 .foot-item text.data-v-1cf27b2a {
   white-space: nowrap;
-}
-.floating-add-btn.data-v-1cf27b2a {
-  position: fixed;
-  right: 30rpx;
-  bottom: 120rpx;
-  width: 88rpx;
-  height: 88rpx;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #33c26d;
-  box-shadow: 0 12rpx 26rpx rgba(51, 194, 109, 0.35);
-  z-index: 99;
 }
 .empty-garden.data-v-1cf27b2a {
   margin-top: 40rpx;

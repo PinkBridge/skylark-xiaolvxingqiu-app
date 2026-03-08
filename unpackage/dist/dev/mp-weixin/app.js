@@ -4,6 +4,7 @@ const common_vendor = require("./common/vendor.js");
 const uni_modules_uviewPlus_index = require("./uni_modules/uview-plus/index.js");
 if (!Math) {
   "./pages/index/index.js";
+  "./pages/auth/wechat-entry.js";
   "./pages/care/care.js";
   "./pages/calendar/calendar.js";
   "./pages/mime/mime.js";

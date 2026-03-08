@@ -1,6 +1,7 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
 const common_assets = require("../../common/assets.js");
+const api_index = require("../../api/index.js");
 if (!Array) {
   const _easycom_up_card2 = common_vendor.resolveComponent("up-card");
   _easycom_up_card2();
@@ -12,12 +13,31 @@ if (!Math) {
 const _sfc_main = {
   __name: "coin",
   setup(__props) {
-    const starCoinAmount = common_vendor.ref(1280);
+    const starCoinAmount = common_vendor.ref(0);
+    const nextCoinNeed = common_vendor.ref(20);
+    const completedActivityTotal = common_vendor.ref(0);
+    const loadCoinAccount = () => {
+      api_index.getCoinAccount().then((data) => {
+        starCoinAmount.value = Number((data == null ? void 0 : data.coinBalance) || 0);
+        nextCoinNeed.value = Number((data == null ? void 0 : data.nextCoinNeed) || 20);
+        completedActivityTotal.value = Number((data == null ? void 0 : data.completedActivityTotal) || 0);
+      }).catch((err) => {
+        common_vendor.index.showToast({
+          title: (err == null ? void 0 : err.message) || "加载星币失败",
+          icon: "none"
+        });
+      });
+    };
+    common_vendor.onShow(() => {
+      loadCoinAccount();
+    });
     return (_ctx, _cache) => {
       return {
         a: common_assets._imports_0,
         b: common_vendor.t(starCoinAmount.value),
-        c: common_vendor.p({
+        c: common_vendor.t(nextCoinNeed.value),
+        d: common_vendor.t(completedActivityTotal.value),
+        e: common_vendor.p({
           showHead: false,
           showFoot: false,
           border: false,

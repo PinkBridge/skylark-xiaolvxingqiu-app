@@ -4,14 +4,12 @@ const api_index = require("../../api/index.js");
 if (!Array) {
   const _easycom_up_icon2 = common_vendor.resolveComponent("up-icon");
   const _easycom_up_subsection2 = common_vendor.resolveComponent("up-subsection");
-  const _easycom_up_waterfall2 = common_vendor.resolveComponent("up-waterfall");
-  (_easycom_up_icon2 + _easycom_up_subsection2 + _easycom_up_waterfall2)();
+  (_easycom_up_icon2 + _easycom_up_subsection2)();
 }
 const _easycom_up_icon = () => "../../uni_modules/uview-plus/components/u-icon/u-icon.js";
 const _easycom_up_subsection = () => "../../uni_modules/uview-plus/components/u-subsection/u-subsection.js";
-const _easycom_up_waterfall = () => "../../uni_modules/uview-plus/components/u-waterfall/u-waterfall.js";
 if (!Math) {
-  (_easycom_up_icon + _easycom_up_subsection + _easycom_up_waterfall)();
+  (_easycom_up_icon + _easycom_up_subsection)();
 }
 const SELECTED_GARDEN_KEY = "selectedGardenId";
 const SELECTED_PLANT_FILTER_KEY = "selectedPlantFilter";
@@ -42,8 +40,10 @@ const _sfc_main = {
     const plantFilterTabs = ["全部", "健康", "异常", "今日待呵护", "关注"];
     const activePlantFilterIndex = common_vendor.ref(0);
     const greenPlantList = common_vendor.ref([]);
-    const waterfallKey = common_vendor.ref(0);
+    const latestLoadToken = common_vendor.ref(0);
     const scopedGardenId = common_vendor.ref("");
+    const gardenTitle = common_vendor.ref("我的绿植花园");
+    const gardenDescription = common_vendor.ref("记录每一株生命的成长状态");
     const filterMap = {
       0: "all",
       1: "healthy",
@@ -72,17 +72,101 @@ const _sfc_main = {
       days: item.days || 1
     });
     const filteredPlantList = common_vendor.computed(() => greenPlantList.value);
-    const loadPlants = () => {
+    const leftColumnPlants = common_vendor.computed(() => filteredPlantList.value.filter((_, index) => index % 2 === 0));
+    const rightColumnPlants = common_vendor.computed(() => filteredPlantList.value.filter((_, index) => index % 2 === 1));
+    const isHealthyPlant = (plant) => {
+      const status = `${(plant == null ? void 0 : plant.healthStatus) || ""}`.toLowerCase();
+      if (status)
+        return status === "healthy" || status === "健康";
+      return `${(plant == null ? void 0 : plant.statusLabel) || ""}`.trim() === "健康";
+    };
+    const isAbnormalPlant = (plant) => {
+      const status = `${(plant == null ? void 0 : plant.healthStatus) || ""}`.toLowerCase();
+      if (status)
+        return ["sick", "dormant", "生病", "休眠"].includes(status);
+      const label = `${(plant == null ? void 0 : plant.statusLabel) || ""}`.trim();
+      return label === "生病" || label === "休眠";
+    };
+    const filterPlantCardsByKey = (cards, filterKey) => {
+      if (!Array.isArray(cards))
+        return [];
+      if (filterKey === "healthy")
+        return cards.filter((item) => isHealthyPlant(item));
+      if (filterKey === "abnormal")
+        return cards.filter((item) => isAbnormalPlant(item));
+      if (filterKey === "todo")
+        return cards.filter((item) => ((item == null ? void 0 : item.todayCareTasks) || []).length > 0);
+      if (filterKey === "focus")
+        return cards.filter((item) => !!(item == null ? void 0 : item.focused));
+      return cards;
+    };
+    const buildTodayCareTaskMap = (tasks) => {
+      const map = {};
+      (tasks || []).forEach((task) => {
+        const plantName = `${(task == null ? void 0 : task.plantName) || ""}`.trim();
+        if (!plantName)
+          return;
+        const isToday = Number(task == null ? void 0 : task.offset) === 0;
+        const pending = !(task == null ? void 0 : task.completed);
+        if (!isToday || !pending)
+          return;
+        if (!map[plantName])
+          map[plantName] = [];
+        const label = `${(task == null ? void 0 : task.name) || ""}`.trim() || "待养护";
+        map[plantName].push(label);
+      });
+      return map;
+    };
+    const loadPlants = async () => {
+      const token = ++latestLoadToken.value;
       const filter = filterMap[activePlantFilterIndex.value] || "all";
-      api_index.listPlants(filter, scopedGardenId.value || void 0).then((list) => {
-        greenPlantList.value = [];
-        greenPlantList.value = (list || []).map((item, index) => toCard(item, index));
-        waterfallKey.value += 1;
+      const requestFilter = filter === "todo" || filter === "all" ? void 0 : filter;
+      greenPlantList.value = [];
+      Promise.all([
+        api_index.listPlants(requestFilter, scopedGardenId.value || void 0),
+        api_index.listCareTasks(scopedGardenId.value || void 0).catch(() => [])
+      ]).then(([list, tasks]) => {
+        if (token !== latestLoadToken.value)
+          return;
+        const todayTaskMap = buildTodayCareTaskMap(tasks || []);
+        const cards = (list || []).map((item, index) => {
+          const card = toCard(item, index);
+          const taskByName = todayTaskMap[`${(card == null ? void 0 : card.name) || ""}`.trim()] || [];
+          card.todayCareTasks = taskByName.length ? taskByName : card.todayCareTasks || [];
+          return card;
+        });
+        greenPlantList.value = filterPlantCardsByKey(cards, filter);
       }).catch((err) => {
+        if (token !== latestLoadToken.value)
+          return;
         common_vendor.index.showToast({
           title: (err == null ? void 0 : err.message) || "加载绿植失败",
           icon: "none"
         });
+      });
+    };
+    const loadCurrentGardenMeta = () => {
+      return api_index.listGardens().then((rows) => {
+        const gardens = rows || [];
+        if (!gardens.length) {
+          gardenTitle.value = "我的绿植花园";
+          gardenDescription.value = "记录每一株生命的成长状态";
+          return;
+        }
+        const selectedId = `${scopedGardenId.value || readSelectedGardenId()}`.trim();
+        const selectedGarden = gardens.find((item) => `${(item == null ? void 0 : item.id) ?? ""}` === selectedId);
+        const defaultGarden = gardens.find((item) => !!(item == null ? void 0 : item.isDefault));
+        const targetGarden = selectedGarden || defaultGarden || gardens[0];
+        const targetId = `${(targetGarden == null ? void 0 : targetGarden.id) ?? ""}`.trim();
+        if (targetId) {
+          scopedGardenId.value = targetId;
+          common_vendor.index.setStorageSync(SELECTED_GARDEN_KEY, targetId);
+        }
+        gardenTitle.value = (targetGarden == null ? void 0 : targetGarden.name) || "我的绿植花园";
+        gardenDescription.value = (targetGarden == null ? void 0 : targetGarden.description) || "记录每一株生命的成长状态";
+      }).catch(() => {
+        gardenTitle.value = "我的绿植花园";
+        gardenDescription.value = "记录每一株生命的成长状态";
       });
     };
     const onPlantFilterChange = (index) => {
@@ -130,7 +214,6 @@ const _sfc_main = {
       const deletedId = Number((payload == null ? void 0 : payload.id) || 0);
       if (deletedId) {
         greenPlantList.value = greenPlantList.value.filter((item) => Number(item.id) !== deletedId);
-        waterfallKey.value += 1;
       }
       loadPlants();
     };
@@ -146,7 +229,9 @@ const _sfc_main = {
         activePlantFilterIndex.value = reverseFilterMap[selectedFilter];
         common_vendor.index.removeStorageSync(SELECTED_PLANT_FILTER_KEY);
       }
-      loadPlants();
+      loadCurrentGardenMeta().finally(() => {
+        loadPlants();
+      });
     });
     common_vendor.onLoad((query) => {
       const filterKey = `${(query == null ? void 0 : query.filter) || ""}`.toLowerCase();
@@ -165,7 +250,7 @@ const _sfc_main = {
       common_vendor.index.$off("plant:deleted", handlePlantDeleted);
     });
     return (_ctx, _cache) => {
-      return {
+      return common_vendor.e({
         a: common_vendor.p({
           name: "home",
           size: "14",
@@ -174,14 +259,16 @@ const _sfc_main = {
         b: common_vendor.o(goIndexPage),
         c: `${navMetrics.value.statusBarHeight}px`,
         d: `${navMetrics.value.contentBarHeight}px`,
-        e: common_vendor.p({
+        e: common_vendor.t(gardenTitle.value),
+        f: common_vendor.p({
           name: "plus",
           size: "16",
           color: "#33c26d"
         }),
-        f: common_vendor.o(onAddPlant),
-        g: common_vendor.o(onPlantFilterChange),
-        h: common_vendor.p({
+        g: common_vendor.o(onAddPlant),
+        h: common_vendor.t(gardenDescription.value),
+        i: common_vendor.o(onPlantFilterChange),
+        j: common_vendor.p({
           list: plantFilterTabs,
           current: activePlantFilterIndex.value,
           mode: "button",
@@ -189,63 +276,77 @@ const _sfc_main = {
           inactiveColor: "#5a6b60",
           bgColor: "#eaf9f0"
         }),
-        i: common_vendor.w(({
-          colList
-        }, s0, i0) => {
-          return {
-            a: common_vendor.f(colList, (item, k1, i1) => {
-              return common_vendor.e({
-                a: item.image,
-                b: common_vendor.t(item.statusLabel),
-                c: common_vendor.n(`status-${item.healthStatus}`),
-                d: common_vendor.t(item.days),
-                e: `${item.coverHeight}rpx`,
-                f: item.todayCareTasks.length
-              }, item.todayCareTasks.length ? common_vendor.e({
-                g: common_vendor.f(item.todayCareTasks.slice(0, 3), (task, k2, i2) => {
-                  return {
-                    a: common_vendor.t(task),
-                    b: `${item.id}-${task}`
-                  };
-                }),
-                h: item.todayCareTasks.length > 3
-              }, item.todayCareTasks.length > 3 ? {
-                i: common_vendor.t(item.todayCareTasks.length - 3)
-              } : {}) : {}, {
-                j: common_vendor.t(item.name),
-                k: item.focused
-              }, item.focused ? {
-                l: "beaff5d6-4-" + i0 + "-" + i1 + ",beaff5d6-3",
-                m: common_vendor.p({
-                  name: "star-fill",
-                  size: "15",
-                  color: "#f5b301"
-                })
-              } : {}, {
-                n: item.focused && item.focusReason
-              }, item.focused && item.focusReason ? {
-                o: common_vendor.t(item.focusReason)
-              } : {}, {
-                p: item.id,
-                q: common_vendor.o(($event) => onPlantCardClick(item), item.id)
-              });
+        k: filteredPlantList.value.length
+      }, filteredPlantList.value.length ? {
+        l: common_vendor.f(leftColumnPlants.value, (item, k0, i0) => {
+          return common_vendor.e({
+            a: item.image,
+            b: common_vendor.t(item.statusLabel),
+            c: common_vendor.n(`status-${item.healthStatus}`),
+            d: common_vendor.t(item.days),
+            e: `${item.coverHeight}rpx`,
+            f: item.todayCareTasks.length
+          }, item.todayCareTasks.length ? common_vendor.e({
+            g: common_vendor.f(item.todayCareTasks.slice(0, 3), (task, k1, i1) => {
+              return {
+                a: common_vendor.t(task),
+                b: `${item.id}-${task}`
+              };
             }),
-            b: i0,
-            c: s0
-          };
-        }, {
-          name: "column",
-          path: "i",
-          vueId: "beaff5d6-3"
+            h: item.todayCareTasks.length > 3
+          }, item.todayCareTasks.length > 3 ? {
+            i: common_vendor.t(item.todayCareTasks.length - 3)
+          } : {}) : {}, {
+            j: common_vendor.t(item.name),
+            k: item.focused
+          }, item.focused ? {
+            l: "beaff5d6-3-" + i0,
+            m: common_vendor.p({
+              name: "warning-fill",
+              size: "15",
+              color: "#f5b301"
+            })
+          } : {}, {
+            n: item.id,
+            o: common_vendor.o(($event) => onPlantCardClick(item), item.id)
+          });
         }),
-        j: waterfallKey.value,
-        k: common_vendor.p({
-          modelValue: filteredPlantList.value,
-          idKey: "id",
-          addTime: 80
-        }),
-        l: `${navMetrics.value.navBarHeight + 12}px`
-      };
+        m: common_vendor.f(rightColumnPlants.value, (item, k0, i0) => {
+          return common_vendor.e({
+            a: item.image,
+            b: common_vendor.t(item.statusLabel),
+            c: common_vendor.n(`status-${item.healthStatus}`),
+            d: common_vendor.t(item.days),
+            e: `${item.coverHeight}rpx`,
+            f: item.todayCareTasks.length
+          }, item.todayCareTasks.length ? common_vendor.e({
+            g: common_vendor.f(item.todayCareTasks.slice(0, 3), (task, k1, i1) => {
+              return {
+                a: common_vendor.t(task),
+                b: `${item.id}-${task}`
+              };
+            }),
+            h: item.todayCareTasks.length > 3
+          }, item.todayCareTasks.length > 3 ? {
+            i: common_vendor.t(item.todayCareTasks.length - 3)
+          } : {}) : {}, {
+            j: common_vendor.t(item.name),
+            k: item.focused
+          }, item.focused ? {
+            l: "beaff5d6-4-" + i0,
+            m: common_vendor.p({
+              name: "warning-fill",
+              size: "15",
+              color: "#f5b301"
+            })
+          } : {}, {
+            n: item.id,
+            o: common_vendor.o(($event) => onPlantCardClick(item), item.id)
+          });
+        })
+      } : {}, {
+        n: `${navMetrics.value.navBarHeight + 12}px`
+      });
     };
   }
 };

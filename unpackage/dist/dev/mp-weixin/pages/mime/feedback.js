@@ -37,8 +37,13 @@ const _sfc_main = {
         contact: form.contact.trim()
       }).then(() => {
         common_vendor.index.showToast({
-          title: "感谢反馈，我们会持续优化",
+          title: "提交成功",
           icon: "success"
+        });
+        common_vendor.index.showModal({
+          title: "感谢反馈",
+          content: "感谢反馈，我们会持续优化。",
+          showCancel: false
         });
         form.content = "";
         form.contact = "";

@@ -10,7 +10,8 @@ const _easycom_up_card = () => "../../uni_modules/uview-plus/components/u-card/u
 if (!Math) {
   (_easycom_up_icon + _easycom_up_card)();
 }
-const contactEmail = "13642245956@163.com";
+const contactEmail = "xiaolvxingqiu@163.com";
+const groupQrUrl = "/static/image/wechat-group-qr.png";
 const _sfc_main = {
   __name: "about",
   setup(__props) {
@@ -23,6 +24,12 @@ const _sfc_main = {
             icon: "success"
           });
         }
+      });
+    };
+    const previewGroupQr = () => {
+      common_vendor.index.previewImage({
+        current: groupQrUrl,
+        urls: [groupQrUrl]
       });
     };
     return (_ctx, _cache) => {
@@ -39,7 +46,9 @@ const _sfc_main = {
           size: "18",
           color: "#33c26d"
         }),
-        e: common_vendor.p({
+        e: groupQrUrl,
+        f: common_vendor.o(previewGroupQr),
+        g: common_vendor.p({
           showHead: false,
           showFoot: false,
           border: false,

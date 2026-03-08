@@ -52,6 +52,7 @@
 	import { computed, ref } from 'vue'
 	import { onShow } from '@dcloudio/uni-app'
 	import { getUserProfile } from '@/api'
+	import { readCachedWxProfile } from '@/utils/auth'
 
 	const iconColor = ref("#33c26d")
 	const bgColor = ref("#F8F8F8")
@@ -76,7 +77,16 @@
 					avatar: savedProfile?.avatar || defaultAvatar
 				}
 			})
-			.catch(() => {})
+			.catch(() => {
+				const cached = readCachedWxProfile()
+				if (!cached) return
+				profile.value = {
+					name: cached?.name || profile.value.name,
+					gender: cached?.gender || profile.value.gender,
+					motto: profile.value.motto,
+					avatar: cached?.avatar || defaultAvatar
+				}
+			})
 	}
 
 	onShow(() => {

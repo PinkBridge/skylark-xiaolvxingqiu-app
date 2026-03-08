@@ -114,6 +114,15 @@
   border: 1px solid #e4f3ea;
   box-shadow: 0 10rpx 30rpx rgba(34, 137, 78, 0.1);
 }
+.waterfall-grid.data-v-beaff5d6 {
+  display: flex;
+  align-items: flex-start;
+  gap: 14rpx;
+}
+.waterfall-col.data-v-beaff5d6 {
+  flex: 1;
+  min-width: 0;
+}
 .plant-cover.data-v-beaff5d6 {
   width: 100%;
   position: relative;
@@ -180,13 +189,6 @@
   gap: 8rpx;
   margin-top: 6rpx;
 }
-.focus-reason.data-v-beaff5d6 {
-  display: block;
-  margin-top: 6rpx;
-  font-size: 22rpx;
-  color: #8a5f00;
-  line-height: 1.4;
-}
 .care-task-list.data-v-beaff5d6 {
   display: flex;
   flex-wrap: wrap;
@@ -200,4 +202,10 @@
   color: #2f8f56;
   background-color: #f2fbf5;
   border: 1px solid #d7efdf;
+}
+.empty-plant.data-v-beaff5d6 {
+  margin-top: 60rpx;
+  font-size: 24rpx;
+  color: #8ea096;
+  text-align: center;
 }

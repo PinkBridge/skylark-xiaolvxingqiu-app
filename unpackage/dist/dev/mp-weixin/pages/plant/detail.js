@@ -29,6 +29,8 @@ const _easycom_up_popup = () => "../../uni_modules/uview-plus/components/u-popup
 if (!Math) {
   (_easycom_up_icon + _easycom_up_card + _easycom_up_subsection + _easycom_up_album + _easycom_up_switch + _easycom_up_input + _easycom_up_form_item + _easycom_up_textarea + _easycom_up_form + _easycom_up_button + _easycom_up_popup)();
 }
+const growthRecordPageSize = 10;
+const albumRecordPageSize = 10;
 const _sfc_main = {
   __name: "detail",
   setup(__props) {
@@ -52,118 +54,56 @@ const _sfc_main = {
       photo: "",
       reason: ""
     });
-    const growthRecordMap = {
-      1: [
-        {
-          id: "1-1",
-          icon: "/static/icon/water.png",
-          name: "浇水",
-          day: 28,
-          content: "土壤偏干，补水约 180ml。"
-        },
-        {
-          id: "1-2",
-          icon: "/static/icon/prune.png",
-          name: "修剪",
-          day: 25,
-          content: "修剪底部老叶，促进新芽生长。"
-        },
-        {
-          id: "1-3",
-          icon: "/static/icon/fertilize.png",
-          name: "施肥",
-          day: 21,
-          content: "补充一次稀释营养液。"
-        },
-        {
-          id: "1-4",
-          icon: "/static/icon/loosen.png",
-          name: "松土",
-          day: 18,
-          content: "疏松土壤，促进根系呼吸。"
-        },
-        {
-          id: "1-5",
-          icon: "/static/icon/repot.png",
-          name: "换盆",
-          day: 15,
-          content: "更换新的盆土，促进生长。"
-        },
-        {
-          id: "1-6",
-          icon: "/static/icon/pest.png",
-          name: "病虫害",
-          day: 12,
-          content: "发现蚜虫，喷洒杀虫剂。"
-        },
-        {
-          id: "1-7",
-          icon: "/static/icon/measure.png",
-          name: "测量",
-          day: 9,
-          content: "测量植株高度，调整光照。"
-        },
-        {
-          id: "1-8",
-          icon: "/static/icon/photo.png",
-          name: "拍照",
-          day: 6,
-          content: "拍摄植株照片，记录生长状态。"
-        }
-      ]
+    const switchingStatus = common_vendor.ref(false);
+    const plantStatusOptions = [
+      { value: "healthy", label: "健康", color: "#33c26d", bgColor: "#eefbf3", borderColor: "#d7efdf", icon: "checkmark-circle-fill" },
+      { value: "sick", label: "生病", color: "#f56c6c", bgColor: "#fff3f3", borderColor: "#ffd6d6", icon: "close-circle-fill" },
+      { value: "dormant", label: "休眠", color: "#e6a23c", bgColor: "#fff7e6", borderColor: "#ffe7ba", icon: "clock-fill" },
+      { value: "dead", label: "已死亡", color: "#909399", bgColor: "#f4f4f5", borderColor: "#e4e7ed", icon: "minus-circle-fill" },
+      { value: "gifted", label: "已送人", color: "#409eff", bgColor: "#ecf5ff", borderColor: "#d9ecff", icon: "account-fill" },
+      { value: "sold", label: "已售出", color: "#9c6bff", bgColor: "#f5f0ff", borderColor: "#e5d8ff", icon: "checkmark-circle-fill" }
+    ];
+    const statusAliasMap = {
+      健康: "healthy",
+      生病: "sick",
+      休眠: "dormant",
+      已死亡: "dead",
+      死亡: "dead",
+      已送人: "gifted",
+      已售出: "sold"
     };
-    const photoRecordMap = {
-      1: [
-        {
-          id: "1-p1",
-          date: "2026-02-25",
-          desc: "新芽冒出与叶片状态记录",
-          images: [
-            "/static/flower/857f855fcea81e07d1c315589d5d5a30.jpg",
-            "/static/flower/4c43268b47b31cfab3d434d474ad728c.jpg",
-            "/static/flower/b22cd3cf854015e988176e17dab8a554.jpg",
-            "/static/flower/857f855fcea81e07d1c315589d5d5a30.jpg",
-            "/static/flower/4c43268b47b31cfab3d434d474ad728c.jpg",
-            "/static/flower/b22cd3cf854015e988176e17dab8a554.jpg",
-            "/static/flower/e0c65131708dbcea21fdb5a99a157ac4.jpg",
-            "/static/flower/4f068b19d4225040f35079b570587bfe.jpg",
-            "/static/flower/857f855fcea81e07d1c315589d5d5a30.jpg",
-            "/static/flower/4c43268b47b31cfab3d434d474ad728c.jpg",
-            "/static/flower/b22cd3cf854015e988176e17dab8a554.jpg"
-          ]
-        },
-        {
-          id: "1-p3",
-          date: "2026-02-25",
-          desc: "新芽冒出与叶片状态记录",
-          images: [
-            "/static/flower/857f855fcea81e07d1c315589d5d5a30.jpg",
-            "/static/flower/4c43268b47b31cfab3d434d474ad728c.jpg",
-            "/static/flower/b22cd3cf854015e988176e17dab8a554.jpg",
-            "/static/flower/857f855fcea81e07d1c315589d5d5a30.jpg",
-            "/static/flower/4c43268b47b31cfab3d434d474ad728c.jpg",
-            "/static/flower/b22cd3cf854015e988176e17dab8a554.jpg",
-            "/static/flower/e0c65131708dbcea21fdb5a99a157ac4.jpg",
-            "/static/flower/4f068b19d4225040f35079b570587bfe.jpg",
-            "/static/flower/857f855fcea81e07d1c315589d5d5a30.jpg",
-            "/static/flower/4c43268b47b31cfab3d434d474ad728c.jpg",
-            "/static/flower/b22cd3cf854015e988176e17dab8a554.jpg"
-          ]
-        },
-        {
-          id: "1-p2",
-          date: "2026-02-19",
-          desc: "叶片展开过程对比",
-          images: [
-            "/static/flower/e0c65131708dbcea21fdb5a99a157ac4.jpg",
-            "/static/flower/4f068b19d4225040f35079b570587bfe.jpg"
-          ]
-        }
-      ]
+    const resolveStatusValue = (status) => {
+      if (!status)
+        return "healthy";
+      const raw = `${status}`.trim();
+      if (!raw)
+        return "healthy";
+      return statusAliasMap[raw] || raw.toLowerCase();
     };
-    const statsMap = {
-      1: { totalCareCount: 36, photoCount: 12, lastCareGap: 1, healthScore: "92" }
-    };
+    const currentStatusOption = common_vendor.computed(() => {
+      const value = resolveStatusValue(currentPlant.value.healthStatus);
+      return plantStatusOptions.find((item) => item.value === value) || plantStatusOptions[0];
+    });
+    const growthRecords = common_vendor.ref([]);
+    const growthRecordLoading = common_vendor.ref(false);
+    const growthRecordPageNo = common_vendor.ref(1);
+    const growthRecordHasMore = common_vendor.ref(true);
+    const albumRecords = common_vendor.ref([]);
+    const albumRecordLoading = common_vendor.ref(false);
+    const albumRecordPageNo = common_vendor.ref(1);
+    const albumRecordHasMore = common_vendor.ref(true);
+    const statsSummary = common_vendor.ref({
+      totalCareCount: 0,
+      photoCount: 0,
+      waterCount: 0,
+      lastCareGap: 0,
+      weekCareCount: 0,
+      wateringOutsideRecommendedCount: 0,
+      wateringTimeTip: "",
+      wateringTimeDistribution: [],
+      statusTimeDistribution: []
+    });
+    const monthlyStats = common_vendor.ref([]);
     const careTaskOptions = [
       { key: "water", label: "浇水", icon: "/static/icon/water.png" },
       { key: "fertilize", label: "施肥", icon: "/static/icon/fertilize.png" },
@@ -229,30 +169,248 @@ const _sfc_main = {
     });
     const basicInfoItems = common_vendor.computed(() => {
       return [
-        { key: "days", icon: "clock-fill", value: `第 ${currentPlant.value.days} 天` },
-        { key: "cultivation", icon: "grid-fill", value: currentPlant.value.cultivationLabel },
-        { key: "status", icon: "checkmark-circle-fill", value: currentPlant.value.statusLabel }
+        { key: "days", icon: "clock-fill", iconColor: "#4b9c72", value: `第 ${currentPlant.value.days} 天` },
+        { key: "cultivation", icon: "home-fill", iconColor: "#4b9c72", value: currentPlant.value.cultivationLabel },
+        { key: "species", icon: "bookmark-fill", iconColor: "#4b9c72", value: currentPlant.value.species || "未知品种" }
       ];
     });
-    const growthRecords = common_vendor.computed(() => {
-      return growthRecordMap[currentPlantId.value] || growthRecordMap[1];
-    });
-    const photoRecords = common_vendor.computed(() => {
-      return photoRecordMap[currentPlantId.value] || photoRecordMap[1];
-    });
-    const statsSummary = common_vendor.computed(() => {
-      return statsMap[currentPlantId.value] || statsMap[1];
-    });
+    const photoRecords = common_vendor.computed(() => albumRecords.value);
     const currentTaskPlanMap = common_vendor.computed(() => {
       if (!carePlanConfig.seasonalMode)
         return carePlanConfig.tasks;
       return carePlanConfig.seasonTasks[currentSeasonKey.value];
     });
+    const monthlyBarMax = common_vendor.computed(() => {
+      const values = monthlyStats.value.map((item) => Number((item == null ? void 0 : item.count) || 0));
+      return Math.max(1, ...values);
+    });
+    const mapWateringSegmentLabel = (segment) => {
+      if (segment === "morning")
+        return "早上";
+      if (segment === "daytime")
+        return "白天";
+      if (segment === "evening")
+        return "晚上";
+      if (segment === "night")
+        return "夜间";
+      return segment || "未知";
+    };
+    const wateringTimeDistribution = common_vendor.computed(() => {
+      var _a;
+      const raw = Array.isArray((_a = statsSummary.value) == null ? void 0 : _a.wateringTimeDistribution) ? statsSummary.value.wateringTimeDistribution : [];
+      return raw.map((item) => ({
+        segment: (item == null ? void 0 : item.segment) || "",
+        label: mapWateringSegmentLabel((item == null ? void 0 : item.segment) || ""),
+        count: Number((item == null ? void 0 : item.count) || 0)
+      }));
+    });
+    const wateringTimeMax = common_vendor.computed(() => {
+      const values = wateringTimeDistribution.value.map((item) => Number((item == null ? void 0 : item.count) || 0));
+      return Math.max(1, ...values);
+    });
+    const healthStatusOrder = ["健康", "生病", "休眠", "已死亡", "已送人", "已售出"];
+    const healthStatusColorKeyMap = {
+      健康: "healthy",
+      生病: "sick",
+      休眠: "dormant",
+      已死亡: "dead",
+      已送人: "gifted",
+      已售出: "sold"
+    };
+    const healthStatusDistribution = common_vendor.computed(() => {
+      var _a;
+      const raw = Array.isArray((_a = statsSummary.value) == null ? void 0 : _a.statusTimeDistribution) ? statsSummary.value.statusTimeDistribution : [];
+      const map = {};
+      raw.forEach((item) => {
+        const status = `${(item == null ? void 0 : item.status) || ""}`.trim();
+        if (!status)
+          return;
+        map[status] = Number((item == null ? void 0 : item.durationMinutes) || 0);
+      });
+      const total = healthStatusOrder.reduce((sum, status) => sum + Number(map[status] || 0), 0);
+      return healthStatusOrder.map((status) => {
+        const minutes = Number(map[status] || 0);
+        const ratioNumber = total > 0 ? minutes / total * 100 : 0;
+        const days = minutes / (24 * 60);
+        return {
+          key: healthStatusColorKeyMap[status] || "healthy",
+          status,
+          minutes,
+          daysText: `${days >= 1 ? days.toFixed(1) : days.toFixed(2)}天`,
+          ratio: `${Math.max(total > 0 ? 4 : 0, Math.round(ratioNumber))}%`,
+          ratioText: `${Math.round(ratioNumber)}%`
+        };
+      });
+    });
+    const isAlwaysHealthyTimeline = common_vendor.computed(() => {
+      const list = healthStatusDistribution.value || [];
+      if (!list.length)
+        return false;
+      const healthy = list.find((item) => item.status === "健康");
+      const healthyMinutes = Number((healthy == null ? void 0 : healthy.minutes) || 0);
+      if (healthyMinutes <= 0)
+        return false;
+      return list.every((item) => {
+        if (item.status === "健康")
+          return true;
+        return Number(item.minutes || 0) <= 0;
+      });
+    });
     const onTabChange = (index) => {
       activeTabIndex.value = index;
+      if (index === 0 && !growthRecords.value.length) {
+        resetGrowthRecords();
+        loadGrowthRecords();
+      }
+      if (index === 1 && !albumRecords.value.length) {
+        resetAlbumRecords();
+        loadAlbumRecords();
+      }
     };
     const onSeasonTabChange = (index) => {
       activeSeasonIndex.value = index;
+    };
+    const mapGrowthRecordItem = (item) => {
+      return {
+        id: (item == null ? void 0 : item.id) || `${Date.now()}-${Math.random()}`,
+        name: (item == null ? void 0 : item.name) || "养护记录",
+        icon: (item == null ? void 0 : item.icon) || "checkmark-circle-fill",
+        timeText: toDaysAgoText(item == null ? void 0 : item.date),
+        date: (item == null ? void 0 : item.date) || "",
+        content: (item == null ? void 0 : item.content) || "已完成本次养护记录"
+      };
+    };
+    const toDaysAgoText = (dateText) => {
+      if (!dateText)
+        return "今天";
+      try {
+        const normalized = `${dateText}`.trim().replace(/-/g, "/");
+        const targetDate = new Date(normalized);
+        if (Number.isNaN(targetDate.getTime()))
+          return "今天";
+        const today = /* @__PURE__ */ new Date();
+        const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const targetStart = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+        const diff = Math.floor((todayStart.getTime() - targetStart.getTime()) / (24 * 60 * 60 * 1e3));
+        if (diff <= 0)
+          return "今天";
+        return `${diff}天前`;
+      } catch (e) {
+        return "今天";
+      }
+    };
+    const resetGrowthRecords = () => {
+      growthRecords.value = [];
+      growthRecordPageNo.value = 1;
+      growthRecordHasMore.value = true;
+    };
+    const loadGrowthRecords = () => {
+      if (growthRecordLoading.value || !growthRecordHasMore.value || !currentPlantId.value)
+        return;
+      growthRecordLoading.value = true;
+      api_index.listPlantGrowthRecords(currentPlantId.value, growthRecordPageNo.value, growthRecordPageSize).then((data) => {
+        const list = Array.isArray(data == null ? void 0 : data.list) ? data.list.map(mapGrowthRecordItem) : [];
+        if (growthRecordPageNo.value === 1) {
+          growthRecords.value = list;
+        } else {
+          growthRecords.value = growthRecords.value.concat(list);
+        }
+        growthRecordHasMore.value = !!(data == null ? void 0 : data.hasMore);
+        if (data == null ? void 0 : data.hasMore) {
+          growthRecordPageNo.value += 1;
+        }
+      }).catch((err) => {
+        common_vendor.index.showToast({
+          title: (err == null ? void 0 : err.message) || "加载记录失败",
+          icon: "none"
+        });
+      }).finally(() => {
+        growthRecordLoading.value = false;
+      });
+    };
+    const mapAlbumRecordItem = (item) => {
+      return {
+        id: (item == null ? void 0 : item.id) || `${Date.now()}-${Math.random()}`,
+        date: (item == null ? void 0 : item.date) || "",
+        desc: (item == null ? void 0 : item.desc) || "拍照记录",
+        images: Array.isArray(item == null ? void 0 : item.images) ? item.images.filter(Boolean) : []
+      };
+    };
+    const resetAlbumRecords = () => {
+      albumRecords.value = [];
+      albumRecordPageNo.value = 1;
+      albumRecordHasMore.value = true;
+    };
+    const loadAlbumRecords = () => {
+      if (albumRecordLoading.value || !albumRecordHasMore.value || !currentPlantId.value)
+        return;
+      albumRecordLoading.value = true;
+      api_index.listPlantAlbumRecords(currentPlantId.value, albumRecordPageNo.value, albumRecordPageSize).then((data) => {
+        const list = Array.isArray(data == null ? void 0 : data.list) ? data.list.map(mapAlbumRecordItem).filter((item) => item.images.length) : [];
+        if (albumRecordPageNo.value === 1) {
+          albumRecords.value = list;
+        } else {
+          albumRecords.value = albumRecords.value.concat(list);
+        }
+        albumRecordHasMore.value = !!(data == null ? void 0 : data.hasMore);
+        if (data == null ? void 0 : data.hasMore) {
+          albumRecordPageNo.value += 1;
+        }
+      }).catch((err) => {
+        common_vendor.index.showToast({
+          title: (err == null ? void 0 : err.message) || "加载相册失败",
+          icon: "none"
+        });
+      }).finally(() => {
+        albumRecordLoading.value = false;
+      });
+    };
+    const loadPlantStats = () => {
+      if (!currentPlantId.value)
+        return;
+      api_index.getPlantCareStats(currentPlantId.value).then((data) => {
+        statsSummary.value = {
+          totalCareCount: Number((data == null ? void 0 : data.totalCareCount) || 0),
+          photoCount: Number((data == null ? void 0 : data.photoCount) || 0),
+          waterCount: Number((data == null ? void 0 : data.waterCount) || 0),
+          lastCareGap: Number((data == null ? void 0 : data.lastCareGap) || 0),
+          weekCareCount: Number((data == null ? void 0 : data.weekCareCount) || 0),
+          wateringOutsideRecommendedCount: Number((data == null ? void 0 : data.wateringOutsideRecommendedCount) || 0),
+          wateringTimeTip: (data == null ? void 0 : data.wateringTimeTip) || "",
+          wateringTimeDistribution: Array.isArray(data == null ? void 0 : data.wateringTimeDistribution) ? data.wateringTimeDistribution : [],
+          statusTimeDistribution: Array.isArray(data == null ? void 0 : data.statusTimeDistribution) ? data.statusTimeDistribution : []
+        };
+      }).catch(() => {
+        statsSummary.value = {
+          totalCareCount: 0,
+          photoCount: 0,
+          waterCount: 0,
+          lastCareGap: 0,
+          weekCareCount: 0,
+          wateringOutsideRecommendedCount: 0,
+          wateringTimeTip: "",
+          wateringTimeDistribution: [],
+          statusTimeDistribution: []
+        };
+      });
+    };
+    const loadPlantMonthlyStats = () => {
+      if (!currentPlantId.value)
+        return;
+      api_index.getPlantMonthlyStats(currentPlantId.value, 6).then((list) => {
+        const rows = Array.isArray(list) ? list : [];
+        monthlyStats.value = rows.map((item) => {
+          const monthText = `${(item == null ? void 0 : item.month) || ""}`;
+          const label = /^\d{4}-\d{2}$/.test(monthText) ? `${Number(monthText.slice(5, 7))}月` : monthText;
+          return {
+            month: monthText,
+            label,
+            count: Number((item == null ? void 0 : item.careCount) || 0)
+          };
+        });
+      }).catch(() => {
+        monthlyStats.value = [];
+      });
     };
     const resetCarePlanConfig = () => {
       carePlanConfig.enabled = true;
@@ -395,6 +553,53 @@ const _sfc_main = {
       focusForm.reason = "";
       showFocusPopup.value = true;
     };
+    const buildPlantUpdatePayload = () => {
+      return {
+        name: currentPlant.value.name || "",
+        species: currentPlant.value.species || "",
+        image: currentPlant.value.image || "",
+        cultivationType: currentPlant.value.cultivationType || "soil",
+        plantingDate: currentPlant.value.plantingDate || "",
+        note: currentPlant.value.note || "",
+        healthStatus: resolveStatusValue(currentPlant.value.healthStatus),
+        favorite: !!currentPlant.value.favorite
+      };
+    };
+    const onSwitchPlantStatus = () => {
+      if (switchingStatus.value)
+        return;
+      common_vendor.index.showActionSheet({
+        itemList: plantStatusOptions.map((item) => item.label),
+        success: (res) => {
+          const next = plantStatusOptions[res == null ? void 0 : res.tapIndex];
+          if (!next)
+            return;
+          const current = resolveStatusValue(currentPlant.value.healthStatus);
+          if (next.value === current)
+            return;
+          switchingStatus.value = true;
+          api_index.updatePlant(currentPlant.value.id, {
+            ...buildPlantUpdatePayload(),
+            healthStatus: next.value
+          }).then((data) => {
+            currentPlant.value.healthStatus = (data == null ? void 0 : data.healthStatus) || next.value;
+            currentPlant.value.statusLabel = (data == null ? void 0 : data.statusLabel) || next.label;
+            loadPlantStats();
+            common_vendor.index.showToast({
+              title: `已切换为${next.label}`,
+              icon: "success"
+            });
+          }).catch((err) => {
+            common_vendor.index.showToast({
+              title: (err == null ? void 0 : err.message) || "状态切换失败",
+              icon: "none"
+            });
+          }).finally(() => {
+            switchingStatus.value = false;
+          });
+        }
+      });
+    };
     const onPickFocusPhoto = () => {
       common_vendor.index.chooseImage({
         count: 1,
@@ -409,14 +614,14 @@ const _sfc_main = {
     const onSubmitFocus = () => {
       if (!focusForm.photo) {
         common_vendor.index.showToast({
-          title: "请先上传关注照片",
+          title: "请先上传图片",
           icon: "none"
         });
         return;
       }
       if (!focusForm.reason.trim()) {
         common_vendor.index.showToast({
-          title: "请填写关注原因",
+          title: "请填写备注",
           icon: "none"
         });
         return;
@@ -447,6 +652,14 @@ const _sfc_main = {
       });
     };
     const onDeletePlant = () => {
+      var _a;
+      if (!((_a = currentPlant.value) == null ? void 0 : _a.id)) {
+        common_vendor.index.showToast({
+          title: "绿植信息异常，请稍后重试",
+          icon: "none"
+        });
+        return;
+      }
       common_vendor.index.showModal({
         title: "删除绿植",
         content: `确认删除「${currentPlant.value.name}」吗？`,
@@ -461,12 +674,26 @@ const _sfc_main = {
             });
             const payload = { id: currentPlant.value.id };
             common_vendor.index.$emit("plant:deleted", payload);
-            const eventChannel = getOpenerEventChannel && getOpenerEventChannel();
-            if (eventChannel) {
-              eventChannel.emit("plantDeleted", payload);
+            try {
+              const eventChannel = typeof common_vendor.index.getOpenerEventChannel === "function" ? common_vendor.index.getOpenerEventChannel() : null;
+              if (eventChannel && typeof eventChannel.emit === "function") {
+                eventChannel.emit("plantDeleted", payload);
+              }
+            } catch (e) {
             }
             setTimeout(() => {
-              common_vendor.index.navigateBack();
+              common_vendor.index.switchTab({
+                url: "/pages/plant/plant",
+                fail: () => {
+                  common_vendor.index.navigateBack({
+                    fail: () => {
+                      common_vendor.index.reLaunch({
+                        url: "/pages/plant/plant"
+                      });
+                    }
+                  });
+                }
+              });
             }, 400);
           }).catch((err) => {
             common_vendor.index.showToast({
@@ -477,9 +704,23 @@ const _sfc_main = {
         }
       });
     };
+    common_vendor.onReachBottom(() => {
+      if (activeTabIndex.value === 0) {
+        loadGrowthRecords();
+        return;
+      }
+      if (activeTabIndex.value === 1) {
+        loadAlbumRecords();
+      }
+    });
     common_vendor.onLoad((query) => {
       const id = Number((query == null ? void 0 : query.id) || 1);
       currentPlantId.value = Number.isNaN(id) ? 1 : id;
+      resetGrowthRecords();
+      resetAlbumRecords();
+      loadGrowthRecords();
+      loadPlantStats();
+      loadPlantMonthlyStats();
       api_index.getPlantById(currentPlantId.value).then((data) => {
         currentPlantData.value = {
           ...currentPlantData.value,
@@ -503,44 +744,56 @@ const _sfc_main = {
         a: currentPlant.value.image,
         b: common_vendor.t(currentPlant.value.name),
         c: common_vendor.p({
-          name: currentPlant.value.focused ? "star-fill" : "star",
-          size: "18",
-          color: currentPlant.value.focused ? "#f5b301" : "#b8c2bd"
+          name: currentStatusOption.value.icon,
+          size: "14",
+          color: currentStatusOption.value.color
         }),
-        d: common_vendor.o(onToggleFocus),
-        e: common_vendor.p({
+        d: common_vendor.t(currentStatusOption.value.label),
+        e: currentStatusOption.value.color,
+        f: currentStatusOption.value.bgColor,
+        g: currentStatusOption.value.borderColor,
+        h: common_vendor.o(onSwitchPlantStatus),
+        i: common_vendor.p({
+          name: currentPlant.value.focused ? "warning-fill" : "warning",
+          size: "14",
+          color: currentPlant.value.focused ? "#d48806" : "#2f8f56"
+        }),
+        j: common_vendor.t(currentPlant.value.focused ? "已关注" : "关注"),
+        k: currentPlant.value.focused ? 1 : "",
+        l: common_vendor.o(onToggleFocus),
+        m: common_vendor.p({
           name: "edit-pen",
           size: "16",
           color: "#33c26d"
         }),
-        f: common_vendor.o(onEditPlant),
-        g: common_vendor.p({
+        n: common_vendor.o(onEditPlant),
+        o: common_vendor.p({
           name: "trash",
           size: "16",
           color: "#f56c6c"
         }),
-        h: common_vendor.o(onDeletePlant),
-        i: common_vendor.f(basicInfoItems.value, (infoItem, k0, i0) => {
+        p: common_vendor.o(onDeletePlant),
+        q: common_vendor.f(basicInfoItems.value, (infoItem, k0, i0) => {
           return {
-            a: "b13b633e-4-" + i0 + ",b13b633e-0",
+            a: "b13b633e-5-" + i0 + ",b13b633e-0",
             b: common_vendor.p({
               name: infoItem.icon,
               size: "14",
-              color: "#33c26d"
+              color: infoItem.iconColor || "#7c8b83"
             }),
             c: common_vendor.t(infoItem.value),
             d: infoItem.key,
             e: common_vendor.n(`basic-info-item--${infoItem.key}`)
           };
         }),
-        j: common_vendor.p({
+        r: common_vendor.p({
           showHead: false,
           showFoot: false,
           border: false,
           margin: "0"
         }),
-        k: common_vendor.o(onTabChange),
-        l: common_vendor.p({
+        s: common_vendor.o(onTabChange),
+        t: common_vendor.p({
           list: detailTabs,
           current: activeTabIndex.value,
           mode: "button",
@@ -548,61 +801,71 @@ const _sfc_main = {
           inactiveColor: "#5a6b60",
           bgColor: "#eaf9f0"
         }),
-        m: activeTabIndex.value === 0
-      }, activeTabIndex.value === 0 ? {
-        n: common_vendor.f(growthRecords.value, (record, k0, i0) => {
+        v: activeTabIndex.value === 0
+      }, activeTabIndex.value === 0 ? common_vendor.e({
+        w: common_vendor.f(growthRecords.value, (record, k0, i0) => {
           return {
-            a: "b13b633e-7-" + i0 + "," + ("b13b633e-6-" + i0),
+            a: "b13b633e-8-" + i0 + "," + ("b13b633e-7-" + i0),
             b: common_vendor.p({
-              name: record.icon,
+              name: record.icon || "checkmark-circle-fill",
               size: "16",
               color: "#33c26d"
             }),
             c: common_vendor.t(record.name),
-            d: common_vendor.t(record.day),
-            e: common_vendor.t(record.content),
+            d: common_vendor.t(record.timeText),
+            e: common_vendor.t(record.content || "已完成本次养护记录"),
             f: record.id,
-            g: "b13b633e-6-" + i0
+            g: "b13b633e-7-" + i0
           };
         }),
-        o: common_vendor.p({
+        x: common_vendor.p({
           showHead: false,
           showFoot: false,
           border: false,
           margin: "0"
-        })
-      } : activeTabIndex.value === 1 ? {
-        q: common_vendor.f(photoRecords.value, (photo, k0, i0) => {
+        }),
+        y: !growthRecords.value.length && !growthRecordLoading.value
+      }, !growthRecords.value.length && !growthRecordLoading.value ? {} : {}, {
+        z: growthRecordLoading.value
+      }, growthRecordLoading.value ? {} : growthRecords.value.length && !growthRecordHasMore.value ? {} : {}, {
+        A: growthRecords.value.length && !growthRecordHasMore.value
+      }) : activeTabIndex.value === 1 ? common_vendor.e({
+        C: common_vendor.f(photoRecords.value, (photo, k0, i0) => {
           return {
             a: common_vendor.t(photo.desc),
-            b: "b13b633e-9-" + i0 + "," + ("b13b633e-8-" + i0),
+            b: "b13b633e-10-" + i0 + "," + ("b13b633e-9-" + i0),
             c: common_vendor.p({
               urls: photo.images,
               multipleSize: "140rpx",
               rowCount: "3",
               space: "10rpx"
             }),
-            d: common_vendor.t(photo.date),
-            e: "b13b633e-10-" + i0 + "," + ("b13b633e-8-" + i0),
+            d: common_vendor.t(toDaysAgoText(photo.date)),
+            e: "b13b633e-11-" + i0 + "," + ("b13b633e-9-" + i0),
             f: common_vendor.o(($event) => onShareToMoments(), photo.id),
             g: photo.id,
-            h: "b13b633e-8-" + i0
+            h: "b13b633e-9-" + i0
           };
         }),
-        r: common_vendor.p({
+        D: common_vendor.p({
           name: "share-fill",
           size: "16",
           color: "#33c26d"
         }),
-        s: common_vendor.p({
+        E: common_vendor.p({
           showHead: false,
           showFoot: false,
           border: false,
           margin: "0"
-        })
-      } : activeTabIndex.value === 2 ? common_vendor.e({
-        v: common_vendor.o(($event) => carePlanConfig.seasonalMode = $event),
-        w: common_vendor.p({
+        }),
+        F: !photoRecords.value.length && !albumRecordLoading.value
+      }, !photoRecords.value.length && !albumRecordLoading.value ? {} : {}, {
+        G: albumRecordLoading.value
+      }, albumRecordLoading.value ? {} : photoRecords.value.length && !albumRecordHasMore.value ? {} : {}, {
+        H: photoRecords.value.length && !albumRecordHasMore.value
+      }) : activeTabIndex.value === 2 ? common_vendor.e({
+        J: common_vendor.o(($event) => carePlanConfig.seasonalMode = $event),
+        K: common_vendor.p({
           disabled: !carePlanConfig.enabled,
           activeValue: true,
           inactiveValue: false,
@@ -610,17 +873,17 @@ const _sfc_main = {
           activeColor: "#33c26d",
           modelValue: carePlanConfig.seasonalMode
         }),
-        x: common_vendor.p({
+        L: common_vendor.p({
           name: "checkmark",
           size: "14",
           color: "#33c26d"
         }),
-        y: common_vendor.t(savingCarePlan.value ? "保存中" : "保存计划"),
-        z: common_vendor.o(onSaveCarePlan),
-        A: carePlanConfig.enabled && carePlanConfig.seasonalMode
+        M: common_vendor.t(savingCarePlan.value ? "保存中" : "保存计划"),
+        N: common_vendor.o(onSaveCarePlan),
+        O: carePlanConfig.enabled && carePlanConfig.seasonalMode
       }, carePlanConfig.enabled && carePlanConfig.seasonalMode ? {
-        B: common_vendor.o(onSeasonTabChange),
-        C: common_vendor.p({
+        P: common_vendor.o(onSeasonTabChange),
+        Q: common_vendor.p({
           list: common_vendor.unref(seasonTabList),
           current: activeSeasonIndex.value,
           mode: "button",
@@ -629,18 +892,18 @@ const _sfc_main = {
           bgColor: "#eefbf3"
         })
       } : {}, {
-        D: carePlanConfig.enabled
+        R: carePlanConfig.enabled
       }, carePlanConfig.enabled ? {
-        E: common_vendor.f(careTaskOptions, (task, k0, i0) => {
+        S: common_vendor.f(careTaskOptions, (task, k0, i0) => {
           return {
-            a: "b13b633e-15-" + i0 + ",b13b633e-11",
+            a: "b13b633e-16-" + i0 + ",b13b633e-12",
             b: common_vendor.p({
               name: task.icon,
               size: "16",
               color: "#33c26d"
             }),
             c: common_vendor.t(task.label),
-            d: "b13b633e-16-" + i0 + ",b13b633e-11",
+            d: "b13b633e-17-" + i0 + ",b13b633e-12",
             e: common_vendor.o(($event) => currentTaskPlanMap.value[task.key].intervalDays = $event, task.key),
             f: common_vendor.p({
               type: "number",
@@ -651,7 +914,7 @@ const _sfc_main = {
               modelValue: currentTaskPlanMap.value[task.key].intervalDays
             }),
             g: !currentTaskPlanMap.value[task.key].enabled ? 1 : "",
-            h: "b13b633e-17-" + i0 + ",b13b633e-11",
+            h: "b13b633e-18-" + i0 + ",b13b633e-12",
             i: common_vendor.o(($event) => currentTaskPlanMap.value[task.key].enabled = $event, task.key),
             j: common_vendor.p({
               activeValue: true,
@@ -664,73 +927,108 @@ const _sfc_main = {
           };
         })
       } : {}, {
-        F: carePlanConfig.enabled && carePlanConfig.seasonalMode
+        T: carePlanConfig.enabled && carePlanConfig.seasonalMode
       }, carePlanConfig.enabled && carePlanConfig.seasonalMode ? {} : {}, {
-        G: common_vendor.p({
+        U: common_vendor.p({
           showHead: false,
           showFoot: false,
           border: false,
           margin: "0"
         })
-      }) : {
-        H: common_vendor.t(statsSummary.value.totalCareCount),
-        I: common_vendor.t(statsSummary.value.photoCount),
-        J: common_vendor.t(statsSummary.value.lastCareGap),
-        K: common_vendor.t(statsSummary.value.healthScore),
-        L: common_vendor.p({
-          showHead: false,
-          showFoot: false,
-          border: false,
-          margin: "0"
-        })
+      }) : common_vendor.e({
+        V: common_vendor.t(statsSummary.value.totalCareCount),
+        W: common_vendor.t(statsSummary.value.photoCount),
+        X: common_vendor.t(statsSummary.value.waterCount),
+        Y: common_vendor.t(statsSummary.value.lastCareGap),
+        Z: common_vendor.t(statsSummary.value.weekCareCount),
+        aa: common_vendor.f(monthlyStats.value, (item, k0, i0) => {
+          return {
+            a: common_vendor.t(item.count),
+            b: `${Math.max(8, Math.round(item.count / monthlyBarMax.value * 100))}%`,
+            c: common_vendor.t(item.label),
+            d: item.month
+          };
+        }),
+        ab: common_vendor.f(wateringTimeDistribution.value, (item, k0, i0) => {
+          return {
+            a: common_vendor.t(item.label),
+            b: common_vendor.t(item.count),
+            c: `${Math.max(8, Math.round(item.count / wateringTimeMax.value * 100))}%`,
+            d: item.segment
+          };
+        }),
+        ac: statsSummary.value.wateringOutsideRecommendedCount > 0
+      }, statsSummary.value.wateringOutsideRecommendedCount > 0 ? {
+        ad: common_vendor.t(statsSummary.value.wateringOutsideRecommendedCount)
+      } : {
+        ae: common_vendor.t(statsSummary.value.wateringTimeTip || "浇水时间分布良好。")
       }, {
-        p: activeTabIndex.value === 1,
-        t: activeTabIndex.value === 2,
-        M: common_vendor.o(($event) => showFocusPopup.value = false),
-        N: common_vendor.p({
+        af: common_vendor.f(healthStatusDistribution.value, (item, k0, i0) => {
+          return {
+            a: common_vendor.t(item.status),
+            b: common_vendor.t(item.daysText),
+            c: common_vendor.t(item.ratioText),
+            d: common_vendor.n(`health-status-bar--${item.key}`),
+            e: `${item.ratio}`,
+            f: item.status
+          };
+        }),
+        ag: isAlwaysHealthyTimeline.value
+      }, isAlwaysHealthyTimeline.value ? {} : {}, {
+        ah: common_vendor.p({
+          showHead: false,
+          showFoot: false,
+          border: false,
+          margin: "0"
+        })
+      }), {
+        B: activeTabIndex.value === 1,
+        I: activeTabIndex.value === 2,
+        ai: common_vendor.o(($event) => showFocusPopup.value = false),
+        aj: common_vendor.p({
           name: "close",
           size: "16",
           color: "#8ea096"
         }),
-        O: focusForm.photo
+        ak: focusForm.photo
       }, focusForm.photo ? {
-        P: focusForm.photo
+        al: focusForm.photo
       } : {
-        Q: common_vendor.p({
+        am: common_vendor.p({
           name: "camera-fill",
           size: "20",
           color: "#33c26d"
         })
       }, {
-        R: common_vendor.o(onPickFocusPhoto),
-        S: common_vendor.p({
-          label: "关注照片"
+        an: common_vendor.o(onPickFocusPhoto),
+        ao: common_vendor.p({
+          label: "图片"
         }),
-        T: common_vendor.o(($event) => focusForm.reason = $event),
-        U: common_vendor.p({
-          placeholder: "请输入需要重点关注的原因",
+        ap: common_vendor.o(($event) => focusForm.reason = $event),
+        aq: common_vendor.p({
+          placeholder: "请输入备注",
           border: "surround",
           height: "90",
           maxlength: "120",
           count: true,
           modelValue: focusForm.reason
         }),
-        V: common_vendor.p({
-          label: "关注原因"
+        ar: common_vendor.p({
+          label: "备注"
         }),
-        W: common_vendor.p({
+        as: common_vendor.p({
           model: focusForm,
           labelPosition: "top"
         }),
-        X: common_vendor.o(onSubmitFocus),
-        Y: common_vendor.p({
+        at: common_vendor.o(onSubmitFocus),
+        av: common_vendor.p({
           type: "primary",
           text: "确认关注",
           color: "#33c26d",
           shape: "circle"
         }),
-        Z: common_vendor.o(($event) => showFocusPopup.value = false),
-        aa: common_vendor.p({
+        aw: common_vendor.o(($event) => showFocusPopup.value = false),
+        ax: common_vendor.p({
           show: showFocusPopup.value,
           mode: "bottom",
           round: "18"
