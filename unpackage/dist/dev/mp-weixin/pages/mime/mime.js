@@ -57,6 +57,11 @@ const _sfc_main = {
         url: "/pages/mime/push-setting"
       });
     };
+    const goFavorites = () => {
+      common_vendor.index.navigateTo({
+        url: "/pages/mime/favorites"
+      });
+    };
     const showStarCoinInfo = () => {
       common_vendor.index.navigateTo({
         url: "/pages/mime/coin"
@@ -104,64 +109,75 @@ const _sfc_main = {
         }),
         h: common_vendor.p({
           size: "18",
-          name: "bell-fill",
+          name: "star-fill",
           color: iconColor.value
         }),
-        i: common_vendor.o(goPushSetting),
+        i: common_vendor.o(goFavorites),
         j: common_vendor.p({
-          title: "推送设置",
+          title: "我的收藏",
           clickable: true,
           isLink: true
         }),
         k: common_vendor.p({
           size: "18",
-          name: "red-packet-fill",
+          name: "bell-fill",
           color: iconColor.value
         }),
-        l: common_vendor.o(showStarCoinInfo),
+        l: common_vendor.o(goPushSetting),
         m: common_vendor.p({
-          title: "我的星币",
+          title: "推送设置",
           clickable: true,
           isLink: true
         }),
         n: common_vendor.p({
+          size: "18",
+          name: "red-packet-fill",
+          color: iconColor.value
+        }),
+        o: common_vendor.o(showStarCoinInfo),
+        p: common_vendor.p({
+          title: "我的星币",
+          clickable: true,
+          isLink: true
+        }),
+        q: common_vendor.p({
           height: "3",
           bgColor: bgColor.value
         }),
-        o: common_vendor.p({
+        r: common_vendor.p({
           size: "16",
           name: "info-circle-fill",
           color: iconColor.value
         }),
-        p: common_vendor.o(goAbout),
-        q: common_vendor.p({
-          title: "关于我们",
-          clickable: true,
-          isLink: true
-        }),
-        r: common_vendor.p({
-          size: "16",
-          name: "setting-fill",
-          color: iconColor.value
-        }),
-        s: common_vendor.o(goVersion),
+        s: common_vendor.o(goAbout),
         t: common_vendor.p({
-          title: "软件版本",
+          title: "关于我们",
           clickable: true,
           isLink: true
         }),
         v: common_vendor.p({
           size: "16",
-          name: "question-circle-fill",
+          name: "setting-fill",
           color: iconColor.value
         }),
-        w: common_vendor.o(goFeedback),
+        w: common_vendor.o(goVersion),
         x: common_vendor.p({
-          title: "反馈和建议",
+          title: "软件版本",
           clickable: true,
           isLink: true
         }),
         y: common_vendor.p({
+          size: "16",
+          name: "question-circle-fill",
+          color: iconColor.value
+        }),
+        z: common_vendor.o(goFeedback),
+        A: common_vendor.p({
+          title: "反馈和建议",
+          clickable: true,
+          isLink: true
+        }),
+        B: common_vendor.p({
           height: "3",
           bgColor: bgColor.value
         })

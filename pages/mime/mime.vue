@@ -15,6 +15,11 @@
 		</view>
 		<up-gap height="5" :bgColor="bgColor"></up-gap>
 		<up-cell-group>
+			<up-cell title="我的收藏" clickable isLink @click="goFavorites">
+				<template #icon>
+					<up-icon size="18" name="star-fill" :color="iconColor"></up-icon>
+				</template>
+			</up-cell>
 			<up-cell title="推送设置" clickable isLink @click="goPushSetting">
 				<template #icon>
 					<up-icon size="18" name="bell-fill" :color="iconColor"></up-icon>
@@ -96,6 +101,12 @@
 	const goPushSetting = () => {
 		uni.navigateTo({
 			url: '/pages/mime/push-setting'
+		})
+	}
+
+	const goFavorites = () => {
+		uni.navigateTo({
+			url: '/pages/mime/favorites'
 		})
 	}
 

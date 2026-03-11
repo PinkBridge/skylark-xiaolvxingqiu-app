@@ -3,58 +3,22 @@
 		<view class="top-toolbar">
 			<view class="toolbar-spacer"></view>
 			<view class="toolbar-actions">
-				<!-- #ifdef MP-WEIXIN -->
-				<button
-					v-if="!hasWechatPhone"
-					class="toolbar-btn toolbar-btn--button"
-					open-type="getPhoneNumber"
-					@getphonenumber="onWechatPhoneMine"
-					:disabled="wechatAuthLoading"
-				>
-					<up-icon name="account-fill" size="14" color="#2f8f56"></up-icon>
-					<text>我的</text>
-				</button>
-				<view v-else class="toolbar-btn" @tap="onGoMine">
-					<up-icon name="account-fill" size="14" color="#2f8f56"></up-icon>
-					<text>我的</text>
-				</view>
-				<!-- #endif -->
-				<!-- #ifndef MP-WEIXIN -->
 				<view class="toolbar-btn" @tap="onGoMine">
-					<up-icon name="account-fill" size="14" color="#2f8f56"></up-icon>
+					<up-icon name="account-fill" size="16" color="#2f8f56"></up-icon>
 					<text>我的</text>
 				</view>
-				<!-- #endif -->
 				<view class="toolbar-btn" @tap="onAddGarden">
-					<up-icon name="plus" size="14" color="#2f8f56"></up-icon>
+					<up-icon name="plus" size="16" color="#2f8f56"></up-icon>
 					<text>添加花园</text>
 				</view>
 			</view>
 		</view>
 
 		<view class="recognize-fixed-wrap">
-			<!-- #ifdef MP-WEIXIN -->
-			<button
-				v-if="!hasWechatPhone"
-				class="recognize-btn recognize-btn--button"
-				open-type="getPhoneNumber"
-				@getphonenumber="onWechatPhoneRecognize"
-				:disabled="wechatAuthLoading"
-			>
+			<view class="recognize-btn" :class="{ disabled: recognizeLoading }" @tap="onRecognize">
 				<up-icon name="camera-fill" size="18" color="#ffffff"></up-icon>
-				<text>AI识别</text>
-			</button>
-			<view v-else class="recognize-btn" @tap="onRecognize">
-				<up-icon name="camera-fill" size="18" color="#ffffff"></up-icon>
-				<text>AI识别</text>
+				<text>{{ recognizeLoading ? '识别中...' : 'AI识别' }}</text>
 			</view>
-			<!-- #endif -->
-			<!-- #ifndef MP-WEIXIN -->
-			<view class="recognize-btn" @tap="onRecognize">
-				<up-icon name="camera-fill" size="18" color="#ffffff"></up-icon>
-				<text>AI识别</text>
-			</view>
-			<!-- #endif -->
 		</view>
 
 		<view v-if="gardenCards.length" class="garden-list">
@@ -65,7 +29,7 @@
 				:showFoot="false"
 				:border="false"
 				margin="0"
-				@click="onCardClick"
+				@click="onCardClick(garden)"
 			>
 				<template #body>
 					<view class="card-head">
@@ -105,18 +69,19 @@
 				</template>
 			</up-card>
 		</view>
-		<view v-else class="empty-garden">暂无花园，请点击右下角加号创建</view>
+		<view v-else class="empty-garden">暂无花园，请点击右上角加号创建</view>
 	</view>
 </template>
 
 <script setup>
 import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { authWechatPhone, listCareTasks, listGardens, listPlants } from '@/api'
-import { hasPhoneAuth, saveWxAuthProfile } from '@/utils/auth'
+import { listCareTasks, listGardens, listPlants, recognizePlantByImage, updateUserProfile } from '@/api'
+import { readCachedWxProfile, saveWxAuthProfile } from '@/utils/auth'
 
 const SELECTED_GARDEN_KEY = 'selectedGardenId'
 const SELECTED_PLANT_FILTER_KEY = 'selectedPlantFilter'
+const AI_RESULT_STORAGE_KEY = 'aiRecognizeResult'
 
 const defaultGardenInfo = {
 	title: '我的莫奈花园',
@@ -127,8 +92,47 @@ const defaultGardenInfo = {
 }
 
 const gardenCards = ref([])
-const hasWechatPhone = ref(hasPhoneAuth())
-const wechatAuthLoading = ref(false)
+const recognizeLoading = ref(false)
+
+const syncWechatProfileIfNeeded = (nextAction) => {
+	// #ifdef MP-WEIXIN
+	const cached = readCachedWxProfile()
+	if (cached?.name && cached?.avatar) {
+		nextAction()
+		return
+	}
+	uni.getUserProfile({
+		desc: '用于更新头像和昵称',
+		success: (res) => {
+			const userInfo = res?.userInfo || {}
+			const payload = {
+				avatar: userInfo.avatarUrl || '',
+				name: userInfo.nickName || '',
+				gender: userInfo.gender === 1 ? 'male' : userInfo.gender === 2 ? 'female' : 'unknown'
+			}
+			updateUserProfile(payload)
+				.then(() => {
+					saveWxAuthProfile(payload)
+				})
+				.catch(() => {
+					saveWxAuthProfile(payload)
+				})
+				.finally(() => {
+					nextAction()
+				})
+		},
+		fail: () => {
+			// 用户拒绝也不阻塞业务流程
+			nextAction()
+		}
+	})
+	return
+	// #endif
+
+	// #ifndef MP-WEIXIN
+	nextAction()
+	// #endif
+}
 
 const createFooterStats = (garden) => [
 	{
@@ -163,10 +167,20 @@ const createFooterStats = (garden) => [
 	}
 ]
 
-const onCardClick = () => {
-	uni.showToast({
-		title: '可在这里跳转花园详情页',
-		icon: 'none'
+const onCardClick = (garden) => {
+	const gardenId = `${garden?.id ?? ''}`.trim()
+	if (gardenId) {
+		uni.setStorageSync(SELECTED_GARDEN_KEY, gardenId)
+	}
+	uni.setStorageSync(SELECTED_PLANT_FILTER_KEY, 'all')
+	uni.switchTab({
+		url: '/pages/plant/plant',
+		fail: (err) => {
+			uni.showToast({
+				title: err?.errMsg || '跳转失败',
+				icon: 'none'
+			})
+		}
 	})
 }
 
@@ -193,58 +207,35 @@ const gotoMinePage = () => {
 	})
 }
 
-const completeWechatPhoneAuth = (event, nextAction) => {
-	if (wechatAuthLoading.value) return
-	const detail = event?.detail || {}
-	if (detail.errMsg && detail.errMsg.indexOf(':ok') === -1) {
-		uni.showToast({
-			title: '需要手机号授权才能继续',
-			icon: 'none'
-		})
-		return
+const onGoMine = () => {
+	syncWechatProfileIfNeeded(gotoMinePage)
+}
+
+const gotoRecognizeResult = ({ filePath, result }) => {
+	const imageUrl = `${result?.imageUrl || ''}`.trim()
+	const images = [filePath, imageUrl].map((item) => `${item || ''}`.trim()).filter((item, index, arr) => item && arr.indexOf(item) === index)
+	const payload = {
+		name: `${result?.name || '未知植物'}`.trim() || '未知植物',
+		description: `${result?.description || ''}`.trim(),
+		score: Number(result?.score || 0),
+		imageUrl,
+		recognizedImageUrl: filePath || '',
+		images
 	}
-	wechatAuthLoading.value = true
-	uni.login({
-		provider: 'weixin',
-		success: (loginRes) => {
-			authWechatPhone({
-				code: loginRes?.code || '',
-				encryptedData: detail.encryptedData || '',
-				iv: detail.iv || ''
-			})
-				.then((data) => {
-					saveWxAuthProfile({
-						phone: data?.phone || '',
-						authDone: true
-					})
-					hasWechatPhone.value = hasPhoneAuth()
-					nextAction()
-				})
-				.catch((err) => {
-					uni.showToast({
-						title: err?.message || '手机号授权失败',
-						icon: 'none'
-					})
-				})
-				.finally(() => {
-					wechatAuthLoading.value = false
-				})
-		},
-		fail: () => {
+	uni.setStorageSync(AI_RESULT_STORAGE_KEY, payload)
+	uni.navigateTo({
+		url: '/pages/ai/ai',
+		fail: (err) => {
 			uni.showToast({
-				title: '微信登录失败',
+				title: err?.errMsg || '打开识别结果页失败',
 				icon: 'none'
 			})
-			wechatAuthLoading.value = false
 		}
 	})
 }
 
-const onGoMine = () => {
-	gotoMinePage()
-}
-
 const startRecognize = () => {
+	if (recognizeLoading.value) return
 	uni.showActionSheet({
 		itemList: ['拍照识别', '从相册识别'],
 		success: (res) => {
@@ -253,11 +244,33 @@ const startRecognize = () => {
 				count: 1,
 				sizeType: ['compressed'],
 				sourceType,
-				success: () => {
-					uni.showToast({
-						title: '识别功能即将上线',
-						icon: 'none'
+				success: (chooseRes) => {
+					const filePath = `${chooseRes?.tempFilePaths?.[0] || ''}`.trim()
+					if (!filePath) {
+						uni.showToast({
+							title: '未获取到图片',
+							icon: 'none'
+						})
+						return
+					}
+					recognizeLoading.value = true
+					uni.showLoading({
+						title: '识别中...'
 					})
+					recognizePlantByImage({ filePath })
+						.then((result) => {
+							gotoRecognizeResult({ filePath, result })
+						})
+						.catch((err) => {
+							uni.showToast({
+								title: err?.message || '识别失败，请稍后再试',
+								icon: 'none'
+							})
+						})
+						.finally(() => {
+							recognizeLoading.value = false
+							uni.hideLoading()
+						})
 				}
 			})
 		}
@@ -265,15 +278,7 @@ const startRecognize = () => {
 }
 
 const onRecognize = () => {
-	startRecognize()
-}
-
-const onWechatPhoneMine = (event) => {
-	completeWechatPhoneAuth(event, gotoMinePage)
-}
-
-const onWechatPhoneRecognize = (event) => {
-	completeWechatPhoneAuth(event, startRecognize)
+	syncWechatProfileIfNeeded(startRecognize)
 }
 
 const loadCountsByGarden = () => {
@@ -336,7 +341,6 @@ const loadGardenInfo = () => {
 
 onShow(() => {
 	loadGardenInfo()
-	hasWechatPhone.value = hasPhoneAuth()
 })
 
 const onFooterAction = (item) => {
@@ -399,23 +403,14 @@ const onFooterAction = (item) => {
 	.toolbar-btn {
 		display: inline-flex;
 		align-items: center;
-		gap: 6rpx;
-		padding: 8rpx 14rpx;
+		gap: 8rpx;
+		padding: 10rpx 18rpx;
 		border-radius: 999rpx;
 		background: #eefbf3;
 		border: 1px solid #d7efdf;
-		font-size: 22rpx;
+		font-size: 24rpx;
 		font-weight: 600;
 		color: #2f8f56;
-	}
-
-	.toolbar-btn--button {
-		line-height: normal;
-		margin: 0;
-	}
-
-	.toolbar-btn--button::after {
-		border: none;
 	}
 
 	.recognize-fixed-wrap {
@@ -444,14 +439,8 @@ const onFooterAction = (item) => {
 		color: #ffffff;
 	}
 
-	.recognize-btn--button {
-		line-height: normal;
-		margin: 0;
-		border: none;
-	}
-
-	.recognize-btn--button::after {
-		border: none;
+	.recognize-btn.disabled {
+		opacity: 0.75;
 	}
 
 	.garden-list {

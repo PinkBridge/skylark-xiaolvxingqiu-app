@@ -111,6 +111,7 @@
 
 <script setup>
 import { reactive, ref } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
 import { createGarden } from '@/api'
 
 const formatDate = (timestamp) => {
@@ -204,11 +205,25 @@ const saveGardenInfo = () => {
 		coverUrl: form.image,
 		description: form.description.trim()
 	})
-		.then(() => {
+		.then((created) => {
 			uni.showToast({
 				title: '创建成功',
 				icon: 'success'
 			})
+			const fromAi = `${routeFromAi.value}` === '1'
+			const prefill = `${routePrefill.value || ''}`.trim()
+			const createdGardenId = `${created?.id || ''}`.trim()
+			if (fromAi) {
+				const target = createdGardenId
+					? `/pages/plant/add?gardenId=${encodeURIComponent(createdGardenId)}&prefill=${prefill}`
+					: `/pages/plant/add?prefill=${prefill}`
+				setTimeout(() => {
+					uni.redirectTo({
+						url: target
+					})
+				}, 400)
+				return
+			}
 			setTimeout(() => {
 				uni.navigateBack()
 			}, 400)
@@ -220,6 +235,14 @@ const saveGardenInfo = () => {
 			})
 		})
 }
+
+const routeFromAi = ref('')
+const routePrefill = ref('')
+
+onLoad((query) => {
+	routeFromAi.value = `${query?.fromAi || ''}`.trim()
+	routePrefill.value = `${query?.prefill || ''}`.trim()
+})
 </script>
 
 <style scoped lang="scss">

@@ -1,7 +1,6 @@
 {
   "pages": [
     "pages/index/index",
-    "pages/auth/wechat-entry",
     "pages/care/care",
     "pages/calendar/calendar",
     "pages/mime/mime",
@@ -15,7 +14,9 @@
     "pages/mime/profile",
     "pages/mime/about",
     "pages/mime/version",
-    "pages/mime/feedback"
+    "pages/mime/feedback",
+    "pages/mime/favorites",
+    "pages/ai/ai"
   ],
   "window": {
     "navigationBarTextStyle": "black",
@@ -47,6 +48,11 @@
         "selectedIconPath": "/static/image/48-Calendar-selected.png",
         "text": "日历"
       }
+    ]
+  },
+  "domains": {
+    "request": [
+      "https://tasia-unreputed-veda.ngrok-free.dev"
     ]
   },
   "usingComponents": {}

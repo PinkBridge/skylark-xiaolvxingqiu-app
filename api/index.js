@@ -1,4 +1,4 @@
-import { http } from '@/utils/http'
+import { getCurrentUserId, getHttpBaseUrl, http } from '@/utils/http'
 
 const BIZ_PREFIX = '/api/xiaolvxingqiu'
 const bizUrl = (path) => `${BIZ_PREFIX}${path}`
@@ -11,6 +11,7 @@ export const listGardens = () => http({ url: bizUrl('/gardens') })
 export const getUserProfile = () => http({ url: bizUrl('/profile') })
 export const updateUserProfile = (data) => http({ url: bizUrl('/profile'), method: 'PUT', data })
 export const authWechatPhone = (data) => http({ url: bizUrl('/auth/wechat/phone'), method: 'POST', data })
+export const wechatSilentLogin = (data) => http({ url: bizUrl('/auth/wechat/silent-login'), method: 'POST', data })
 
 export const listPlants = (filter, gardenId) => {
   const params = []
@@ -66,3 +67,51 @@ export const getCoinAccount = () => http({ url: bizUrl('/coin/account') })
 
 export const submitFeedbackApi = (data) => http({ url: bizUrl('/feedback'), method: 'POST', data })
 export const listFeedbackApi = () => http({ url: bizUrl('/feedback') })
+export const createAiCollection = (data) => http({ url: bizUrl('/ai/collections'), method: 'POST', data })
+export const listAiCollections = () => http({ url: bizUrl('/ai/collections') })
+export const deleteAiCollection = (id) => http({ url: bizUrl(`/ai/collections/${id}`), method: 'DELETE' })
+export const addAiCollectionToGarden = (id) => http({ url: bizUrl(`/ai/collections/${id}/add-to-garden`), method: 'POST' })
+export const addRecognizedToGarden = (data) => http({ url: bizUrl('/ai/collections/add-to-garden'), method: 'POST', data })
+
+export const recognizePlantByImage = ({ filePath, fileName = 'plant.jpg' }) => new Promise((resolve, reject) => {
+  const normalizedPath = `${filePath || ''}`.trim()
+  if (!normalizedPath) {
+    reject(new Error('请选择要识别的图片'))
+    return
+  }
+  const userId = getCurrentUserId()
+  const header = userId ? { 'X-User-Id': userId } : {}
+  if (getHttpBaseUrl().indexOf('ngrok-free.dev') >= 0) {
+    header['ngrok-skip-browser-warning'] = 'true'
+  }
+  uni.uploadFile({
+    url: `${getHttpBaseUrl()}${bizUrl('/ai/plant/recognize')}`,
+    filePath: normalizedPath,
+    name: 'file',
+    formData: {
+      fileName
+    },
+    header,
+    success: (res) => {
+      let payload = {}
+      if (typeof res?.data === 'string') {
+        try {
+          payload = JSON.parse(res.data || '{}')
+        } catch (e) {
+          reject(new Error('识别服务返回解析失败'))
+          return
+        }
+      } else if (res?.data && typeof res.data === 'object') {
+        payload = res.data
+      }
+      if (res.statusCode >= 200 && res.statusCode < 300 && payload.code === 0) {
+        resolve(payload.data)
+        return
+      }
+      reject(new Error(payload.message || `识别失败: ${res.statusCode}`))
+    },
+    fail: (err) => {
+      reject(new Error(err?.errMsg || '上传图片失败'))
+    }
+  })
+})

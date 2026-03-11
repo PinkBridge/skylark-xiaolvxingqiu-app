@@ -46,21 +46,14 @@
 .toolbar-btn.data-v-1cf27b2a {
   display: inline-flex;
   align-items: center;
-  gap: 6rpx;
-  padding: 8rpx 14rpx;
+  gap: 8rpx;
+  padding: 10rpx 18rpx;
   border-radius: 999rpx;
   background: #eefbf3;
   border: 1px solid #d7efdf;
-  font-size: 22rpx;
+  font-size: 24rpx;
   font-weight: 600;
   color: #2f8f56;
-}
-.toolbar-btn--button.data-v-1cf27b2a {
-  line-height: normal;
-  margin: 0;
-}
-.toolbar-btn--button.data-v-1cf27b2a::after {
-  border: none;
 }
 .recognize-fixed-wrap.data-v-1cf27b2a {
   position: fixed;
@@ -86,13 +79,8 @@
   font-weight: 700;
   color: #ffffff;
 }
-.recognize-btn--button.data-v-1cf27b2a {
-  line-height: normal;
-  margin: 0;
-  border: none;
-}
-.recognize-btn--button.data-v-1cf27b2a::after {
-  border: none;
+.recognize-btn.disabled.data-v-1cf27b2a {
+  opacity: 0.75;
 }
 .garden-list.data-v-1cf27b2a {
   display: flex;

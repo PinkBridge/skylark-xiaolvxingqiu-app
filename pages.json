@@ -7,12 +7,6 @@
 			}
 		},
 		{
-			"path": "pages/auth/wechat-entry",
-			"style": {
-				"navigationBarTitleText": "微信授权"
-			}
-		},
-		{
 			"path": "pages/care/care",
 			"style": {
 				"navigationBarTitleText": "养护管理",
@@ -97,6 +91,18 @@
 			"path": "pages/mime/feedback",
 			"style": {
 				"navigationBarTitleText": "反馈和建议"
+			}
+		},
+		{
+			"path": "pages/mime/favorites",
+			"style": {
+				"navigationBarTitleText": "我的收藏"
+			}
+		},
+		{
+			"path": "pages/ai/ai",
+			"style": {
+				"navigationBarTitleText": "识别结果"
 			}
 		}
 	],

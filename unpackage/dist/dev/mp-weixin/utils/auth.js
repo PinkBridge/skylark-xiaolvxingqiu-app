@@ -8,9 +8,6 @@ const readCachedWxProfile = () => {
     return null;
   return data;
 };
-const hasPhoneAuth = () => {
-  return !!common_vendor.index.getStorageSync(WX_AUTH_DONE_KEY);
-};
 const saveWxAuthProfile = (profile) => {
   const cached = readCachedWxProfile() || {};
   const normalizedPhone = `${(profile == null ? void 0 : profile.phone) ?? (cached == null ? void 0 : cached.phone) ?? ""}`.trim();
@@ -24,7 +21,6 @@ const saveWxAuthProfile = (profile) => {
   common_vendor.index.setStorageSync(WX_USER_PROFILE_CACHE_KEY, payload);
   common_vendor.index.setStorageSync(WX_AUTH_DONE_KEY, (profile == null ? void 0 : profile.authDone) === true || !!payload.phone);
 };
-exports.hasPhoneAuth = hasPhoneAuth;
 exports.readCachedWxProfile = readCachedWxProfile;
 exports.saveWxAuthProfile = saveWxAuthProfile;
 //# sourceMappingURL=../../.sourcemap/mp-weixin/utils/auth.js.map

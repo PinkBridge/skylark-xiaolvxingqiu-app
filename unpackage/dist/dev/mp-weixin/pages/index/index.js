@@ -14,6 +14,7 @@ if (!Math) {
 }
 const SELECTED_GARDEN_KEY = "selectedGardenId";
 const SELECTED_PLANT_FILTER_KEY = "selectedPlantFilter";
+const AI_RESULT_STORAGE_KEY = "aiRecognizeResult";
 const _sfc_main = {
   __name: "index",
   setup(__props) {
@@ -25,8 +26,36 @@ const _sfc_main = {
       description: "釉色渲染仕女图韵味被私藏，而你嫣然的一笑如含苞待放"
     };
     const gardenCards = common_vendor.ref([]);
-    const hasWechatPhone = common_vendor.ref(utils_auth.hasPhoneAuth());
-    const wechatAuthLoading = common_vendor.ref(false);
+    const recognizeLoading = common_vendor.ref(false);
+    const syncWechatProfileIfNeeded = (nextAction) => {
+      const cached = utils_auth.readCachedWxProfile();
+      if ((cached == null ? void 0 : cached.name) && (cached == null ? void 0 : cached.avatar)) {
+        nextAction();
+        return;
+      }
+      common_vendor.index.getUserProfile({
+        desc: "用于更新头像和昵称",
+        success: (res) => {
+          const userInfo = (res == null ? void 0 : res.userInfo) || {};
+          const payload = {
+            avatar: userInfo.avatarUrl || "",
+            name: userInfo.nickName || "",
+            gender: userInfo.gender === 1 ? "male" : userInfo.gender === 2 ? "female" : "unknown"
+          };
+          api_index.updateUserProfile(payload).then(() => {
+            utils_auth.saveWxAuthProfile(payload);
+          }).catch(() => {
+            utils_auth.saveWxAuthProfile(payload);
+          }).finally(() => {
+            nextAction();
+          });
+        },
+        fail: () => {
+          nextAction();
+        }
+      });
+      return;
+    };
     const createFooterStats = (garden) => [
       {
         key: "plant",
@@ -59,10 +88,20 @@ const _sfc_main = {
         plantFilter: "focus"
       }
     ];
-    const onCardClick = () => {
-      common_vendor.index.showToast({
-        title: "可在这里跳转花园详情页",
-        icon: "none"
+    const onCardClick = (garden) => {
+      const gardenId = `${(garden == null ? void 0 : garden.id) ?? ""}`.trim();
+      if (gardenId) {
+        common_vendor.index.setStorageSync(SELECTED_GARDEN_KEY, gardenId);
+      }
+      common_vendor.index.setStorageSync(SELECTED_PLANT_FILTER_KEY, "all");
+      common_vendor.index.switchTab({
+        url: "/pages/plant/plant",
+        fail: (err) => {
+          common_vendor.index.showToast({
+            title: (err == null ? void 0 : err.errMsg) || "跳转失败",
+            icon: "none"
+          });
+        }
       });
     };
     const onEditGardenInfo = () => {
@@ -85,54 +124,34 @@ const _sfc_main = {
         }
       });
     };
-    const completeWechatPhoneAuth = (event, nextAction) => {
-      if (wechatAuthLoading.value)
-        return;
-      const detail = (event == null ? void 0 : event.detail) || {};
-      if (detail.errMsg && detail.errMsg.indexOf(":ok") === -1) {
-        common_vendor.index.showToast({
-          title: "需要手机号授权才能继续",
-          icon: "none"
-        });
-        return;
-      }
-      wechatAuthLoading.value = true;
-      common_vendor.index.login({
-        provider: "weixin",
-        success: (loginRes) => {
-          api_index.authWechatPhone({
-            code: (loginRes == null ? void 0 : loginRes.code) || "",
-            encryptedData: detail.encryptedData || "",
-            iv: detail.iv || ""
-          }).then((data) => {
-            utils_auth.saveWxAuthProfile({
-              phone: (data == null ? void 0 : data.phone) || "",
-              authDone: true
-            });
-            hasWechatPhone.value = utils_auth.hasPhoneAuth();
-            nextAction();
-          }).catch((err) => {
-            common_vendor.index.showToast({
-              title: (err == null ? void 0 : err.message) || "手机号授权失败",
-              icon: "none"
-            });
-          }).finally(() => {
-            wechatAuthLoading.value = false;
-          });
-        },
-        fail: () => {
+    const onGoMine = () => {
+      syncWechatProfileIfNeeded(gotoMinePage);
+    };
+    const gotoRecognizeResult = ({ filePath, result }) => {
+      const imageUrl = `${(result == null ? void 0 : result.imageUrl) || ""}`.trim();
+      const images = [filePath, imageUrl].map((item) => `${item || ""}`.trim()).filter((item, index, arr) => item && arr.indexOf(item) === index);
+      const payload = {
+        name: `${(result == null ? void 0 : result.name) || "未知植物"}`.trim() || "未知植物",
+        description: `${(result == null ? void 0 : result.description) || ""}`.trim(),
+        score: Number((result == null ? void 0 : result.score) || 0),
+        imageUrl,
+        recognizedImageUrl: filePath || "",
+        images
+      };
+      common_vendor.index.setStorageSync(AI_RESULT_STORAGE_KEY, payload);
+      common_vendor.index.navigateTo({
+        url: "/pages/ai/ai",
+        fail: (err) => {
           common_vendor.index.showToast({
-            title: "微信登录失败",
+            title: (err == null ? void 0 : err.errMsg) || "打开识别结果页失败",
             icon: "none"
           });
-          wechatAuthLoading.value = false;
         }
       });
     };
-    const onGoMine = () => {
-      gotoMinePage();
-    };
     const startRecognize = () => {
+      if (recognizeLoading.value)
+        return;
       common_vendor.index.showActionSheet({
         itemList: ["拍照识别", "从相册识别"],
         success: (res) => {
@@ -141,10 +160,30 @@ const _sfc_main = {
             count: 1,
             sizeType: ["compressed"],
             sourceType,
-            success: () => {
-              common_vendor.index.showToast({
-                title: "识别功能即将上线",
-                icon: "none"
+            success: (chooseRes) => {
+              var _a;
+              const filePath = `${((_a = chooseRes == null ? void 0 : chooseRes.tempFilePaths) == null ? void 0 : _a[0]) || ""}`.trim();
+              if (!filePath) {
+                common_vendor.index.showToast({
+                  title: "未获取到图片",
+                  icon: "none"
+                });
+                return;
+              }
+              recognizeLoading.value = true;
+              common_vendor.index.showLoading({
+                title: "识别中..."
+              });
+              api_index.recognizePlantByImage({ filePath }).then((result) => {
+                gotoRecognizeResult({ filePath, result });
+              }).catch((err) => {
+                common_vendor.index.showToast({
+                  title: (err == null ? void 0 : err.message) || "识别失败，请稍后再试",
+                  icon: "none"
+                });
+              }).finally(() => {
+                recognizeLoading.value = false;
+                common_vendor.index.hideLoading();
               });
             }
           });
@@ -152,13 +191,7 @@ const _sfc_main = {
       });
     };
     const onRecognize = () => {
-      startRecognize();
-    };
-    const onWechatPhoneMine = (event) => {
-      completeWechatPhoneAuth(event, gotoMinePage);
-    };
-    const onWechatPhoneRecognize = (event) => {
-      completeWechatPhoneAuth(event, startRecognize);
+      syncWechatProfileIfNeeded(startRecognize);
     };
     const loadCountsByGarden = () => {
       if (!gardenCards.value.length)
@@ -219,7 +252,6 @@ const _sfc_main = {
     };
     common_vendor.onShow(() => {
       loadGardenInfo();
-      hasWechatPhone.value = utils_auth.hasPhoneAuth();
     });
     const onFooterAction = (item) => {
       const gardenId = `${(item == null ? void 0 : item.gardenId) ?? ""}`.trim();
@@ -253,89 +285,69 @@ const _sfc_main = {
     };
     return (_ctx, _cache) => {
       return common_vendor.e({
-        a: !hasWechatPhone.value
-      }, !hasWechatPhone.value ? {
-        b: common_vendor.p({
+        a: common_vendor.p({
           name: "account-fill",
-          size: "14",
+          size: "16",
           color: "#2f8f56"
         }),
-        c: common_vendor.o(onWechatPhoneMine),
-        d: wechatAuthLoading.value
-      } : {
-        e: common_vendor.p({
-          name: "account-fill",
-          size: "14",
-          color: "#2f8f56"
-        }),
-        f: common_vendor.o(onGoMine)
-      }, {
-        g: common_vendor.p({
+        b: common_vendor.o(onGoMine),
+        c: common_vendor.p({
           name: "plus",
-          size: "14",
+          size: "16",
           color: "#2f8f56"
         }),
-        h: common_vendor.o(onAddGarden),
-        i: !hasWechatPhone.value
-      }, !hasWechatPhone.value ? {
-        j: common_vendor.p({
+        d: common_vendor.o(onAddGarden),
+        e: common_vendor.p({
           name: "camera-fill",
           size: "18",
           color: "#ffffff"
         }),
-        k: common_vendor.o(onWechatPhoneRecognize),
-        l: wechatAuthLoading.value
-      } : {
-        m: common_vendor.p({
-          name: "camera-fill",
-          size: "18",
-          color: "#ffffff"
-        }),
-        n: common_vendor.o(onRecognize)
-      }, {
-        o: gardenCards.value.length
+        f: common_vendor.t(recognizeLoading.value ? "识别中..." : "AI识别"),
+        g: recognizeLoading.value ? 1 : "",
+        h: common_vendor.o(onRecognize),
+        i: gardenCards.value.length
       }, gardenCards.value.length ? {
-        p: common_vendor.f(gardenCards.value, (garden, k0, i0) => {
+        j: common_vendor.f(gardenCards.value, (garden, k0, i0) => {
           return common_vendor.e({
             a: garden.thumb,
             b: common_vendor.t(garden.title),
             c: garden.isDefault
           }, garden.isDefault ? {} : {}, {
-            d: "1cf27b2a-6-" + i0 + "," + ("1cf27b2a-5-" + i0),
+            d: "1cf27b2a-4-" + i0 + "," + ("1cf27b2a-3-" + i0),
             e: common_vendor.o(onEditGardenInfo, garden.id),
             f: common_vendor.t(garden.subTitle),
             g: garden.image,
             h: common_vendor.t(garden.description),
             i: common_vendor.f(createFooterStats(garden), (item, k1, i1) => {
               return {
-                a: "1cf27b2a-7-" + i0 + "-" + i1 + "," + ("1cf27b2a-5-" + i0),
+                a: "1cf27b2a-5-" + i0 + "-" + i1 + "," + ("1cf27b2a-3-" + i0),
                 b: common_vendor.p({
                   name: item.icon,
                   size: "16",
                   color: item.color
                 }),
                 c: common_vendor.t(item.label),
-                d: "1cf27b2a-8-" + i0 + "-" + i1 + "," + ("1cf27b2a-5-" + i0),
+                d: "1cf27b2a-6-" + i0 + "-" + i1 + "," + ("1cf27b2a-3-" + i0),
                 e: item.key,
                 f: common_vendor.o(($event) => onFooterAction(item), item.key)
               };
             }),
             j: garden.id,
-            k: common_vendor.o(onCardClick, garden.id),
-            l: "1cf27b2a-5-" + i0
+            k: common_vendor.o(($event) => onCardClick(garden), garden.id),
+            l: "1cf27b2a-3-" + i0
           });
         }),
-        q: common_vendor.p({
+        k: common_vendor.p({
           name: "edit-pen",
           size: "16",
           color: "#33c26d"
         }),
-        r: common_vendor.p({
+        l: common_vendor.p({
           name: "arrow-right",
           size: "12",
           color: "#7bc59a"
         }),
-        s: common_vendor.p({
+        m: common_vendor.p({
           showHead: false,
           showFoot: false,
           border: false,

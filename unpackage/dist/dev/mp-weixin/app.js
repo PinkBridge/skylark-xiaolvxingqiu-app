@@ -4,7 +4,6 @@ const common_vendor = require("./common/vendor.js");
 const uni_modules_uviewPlus_index = require("./uni_modules/uview-plus/index.js");
 if (!Math) {
   "./pages/index/index.js";
-  "./pages/auth/wechat-entry.js";
   "./pages/care/care.js";
   "./pages/calendar/calendar.js";
   "./pages/mime/mime.js";
@@ -19,6 +18,8 @@ if (!Math) {
   "./pages/mime/about.js";
   "./pages/mime/version.js";
   "./pages/mime/feedback.js";
+  "./pages/mime/favorites.js";
+  "./pages/ai/ai.js";
 }
 const _sfc_main = {
   onLaunch: function() {

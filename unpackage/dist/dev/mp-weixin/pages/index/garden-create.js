@@ -106,11 +106,23 @@ const _sfc_main = {
         thumbUrl: form.thumb,
         coverUrl: form.image,
         description: form.description.trim()
-      }).then(() => {
+      }).then((created) => {
         common_vendor.index.showToast({
           title: "创建成功",
           icon: "success"
         });
+        const fromAi = `${routeFromAi.value}` === "1";
+        const prefill = `${routePrefill.value || ""}`.trim();
+        const createdGardenId = `${(created == null ? void 0 : created.id) || ""}`.trim();
+        if (fromAi) {
+          const target = createdGardenId ? `/pages/plant/add?gardenId=${encodeURIComponent(createdGardenId)}&prefill=${prefill}` : `/pages/plant/add?prefill=${prefill}`;
+          setTimeout(() => {
+            common_vendor.index.redirectTo({
+              url: target
+            });
+          }, 400);
+          return;
+        }
         setTimeout(() => {
           common_vendor.index.navigateBack();
         }, 400);
@@ -121,6 +133,12 @@ const _sfc_main = {
         });
       });
     };
+    const routeFromAi = common_vendor.ref("");
+    const routePrefill = common_vendor.ref("");
+    common_vendor.onLoad((query) => {
+      routeFromAi.value = `${(query == null ? void 0 : query.fromAi) || ""}`.trim();
+      routePrefill.value = `${(query == null ? void 0 : query.prefill) || ""}`.trim();
+    });
     return (_ctx, _cache) => {
       return common_vendor.e({
         a: form.thumb

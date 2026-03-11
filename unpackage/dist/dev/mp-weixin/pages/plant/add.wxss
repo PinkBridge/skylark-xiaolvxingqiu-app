@@ -74,6 +74,90 @@
 .submit-wrap.data-v-2986bdf3 {
   margin-top: 28rpx;
 }
+.plan-wrap.data-v-2986bdf3 {
+  width: 100%;
+  border: 1px solid #d7efdf;
+  border-radius: 14rpx;
+  padding: 16rpx;
+  background: #f7fcf9;
+}
+.plan-header.data-v-2986bdf3 {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20rpx;
+}
+.plan-title.data-v-2986bdf3 {
+  font-size: 24rpx;
+  color: #2f8f56;
+}
+.plan-mode-switch.data-v-2986bdf3 {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+.season-tabs-wrap.data-v-2986bdf3 {
+  margin-top: 12rpx;
+}
+.task-plan-wrap.data-v-2986bdf3 {
+  margin-top: 12rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+.task-plan-item.data-v-2986bdf3 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8rpx 6rpx;
+  border-radius: 14rpx;
+  background: #ffffff;
+}
+.task-left.data-v-2986bdf3 {
+  display: flex;
+  align-items: center;
+  gap: 15rpx;
+}
+.task-icon-box.data-v-2986bdf3 {
+  width: 54rpx;
+  height: 54rpx;
+  border-radius: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eefbf3;
+  border: 1px solid #d7efdf;
+}
+.task-info.data-v-2986bdf3 {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+.task-name.data-v-2986bdf3 {
+  font-size: 26rpx;
+  color: #1f2d2a;
+  font-weight: 500;
+  line-height: 1;
+}
+.task-frequency-row.data-v-2986bdf3 {
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+}
+.frequency-prefix.data-v-2986bdf3,
+.frequency-suffix.data-v-2986bdf3 {
+  font-size: 22rpx;
+  color: #6f7f76;
+}
+.is-disabled.data-v-2986bdf3 {
+  opacity: 0.5;
+}
+.season-note.data-v-2986bdf3 {
+  margin-top: 12rpx;
+  font-size: 20rpx;
+  color: #8a9790;
+  line-height: 1.4;
+}
 .data-v-2986bdf3 .u-form-item__body__left__content__label {
   white-space: nowrap;
 }
