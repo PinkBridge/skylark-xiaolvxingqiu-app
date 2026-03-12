@@ -64,6 +64,8 @@ export const getPlantMonthlyStats = (plantId, months = 6) =>
 export const getCarePlanConfig = (plantId) => http({ url: bizUrl(`/care/plans/${plantId}`) })
 export const saveCarePlanConfig = (plantId, data) => http({ url: bizUrl(`/care/plans/${plantId}`), method: 'PUT', data })
 export const getCoinAccount = () => http({ url: bizUrl('/coin/account') })
+export const getSubscribeSetting = () => http({ url: bizUrl('/notify/subscribe-setting') })
+export const saveSubscribeSetting = (data) => http({ url: bizUrl('/notify/subscribe-setting'), method: 'PUT', data })
 
 export const submitFeedbackApi = (data) => http({ url: bizUrl('/feedback'), method: 'POST', data })
 export const listFeedbackApi = () => http({ url: bizUrl('/feedback') })
@@ -72,6 +74,109 @@ export const listAiCollections = () => http({ url: bizUrl('/ai/collections') })
 export const deleteAiCollection = (id) => http({ url: bizUrl(`/ai/collections/${id}`), method: 'DELETE' })
 export const addAiCollectionToGarden = (id) => http({ url: bizUrl(`/ai/collections/${id}/add-to-garden`), method: 'POST' })
 export const addRecognizedToGarden = (data) => http({ url: bizUrl('/ai/collections/add-to-garden'), method: 'POST', data })
+
+const parseUploadPayload = (raw) => {
+  if (typeof raw === 'string') {
+    try {
+      return JSON.parse(raw || '{}')
+    } catch (e) {
+      return null
+    }
+  }
+  if (raw && typeof raw === 'object') return raw
+  return null
+}
+
+const isHttpUrl = (value) => /^https?:\/\//i.test(`${value || ''}`.trim())
+
+const isTmpHttpUrl = (value) => {
+  const raw = `${value || ''}`.trim().toLowerCase()
+  if (!isHttpUrl(raw)) return false
+  return raw.indexOf('http://tmp/') === 0 || raw.indexOf('https://tmp/') === 0
+}
+
+const shouldSkipUpload = (value) => {
+  const raw = `${value || ''}`.trim()
+  if (!isHttpUrl(raw)) return false
+  // `http://tmp/...` is a local temporary path in some runtimes, must still upload.
+  return !isTmpHttpUrl(raw)
+}
+
+const readLocalFileSize = (filePath) => new Promise((resolve) => {
+  uni.getFileInfo({
+    filePath,
+    success: (res) => resolve(Number(res?.size || 0)),
+    fail: () => resolve(0)
+  })
+})
+
+const compressLocalImage = (filePath) => new Promise((resolve) => {
+  // #ifdef MP-WEIXIN
+  uni.compressImage({
+    src: filePath,
+    quality: 72,
+    success: (res) => resolve(`${res?.tempFilePath || filePath}`),
+    fail: () => resolve(filePath)
+  })
+  // #endif
+
+  // #ifndef MP-WEIXIN
+  resolve(filePath)
+  // #endif
+})
+
+export const uploadImageResource = ({ filePath, fileName = 'image.jpg' }) => new Promise((resolve, reject) => {
+  const normalizedPath = `${filePath || ''}`.trim()
+  if (!normalizedPath) {
+    reject(new Error('请选择要上传的图片'))
+    return
+  }
+  if (shouldSkipUpload(normalizedPath)) {
+    resolve(normalizedPath)
+    return
+  }
+  readLocalFileSize(normalizedPath)
+    .then((rawSize) => {
+      const tenMb = 10 * 1024 * 1024
+      if (rawSize > tenMb) {
+        throw new Error('图片过大，请选择不超过10MB的图片')
+      }
+      return compressLocalImage(normalizedPath)
+    })
+    .then((maybeCompressedPath) => {
+  const userId = getCurrentUserId()
+  const header = userId ? { 'X-User-Id': userId } : {}
+  if (getHttpBaseUrl().indexOf('ngrok-free.dev') >= 0) {
+    header['ngrok-skip-browser-warning'] = 'true'
+  }
+  uni.uploadFile({
+    url: `${getHttpBaseUrl()}${bizUrl('/file/upload-image')}`,
+    filePath: maybeCompressedPath || normalizedPath,
+    name: 'file',
+    formData: { fileName },
+    header,
+    success: (res) => {
+      const payload = parseUploadPayload(res?.data)
+      if (!payload) {
+        reject(new Error('图片上传返回解析失败'))
+        return
+      }
+      const url = `${payload?.data?.url || payload?.data?.signedUrl || ''}`.trim()
+      if (res.statusCode >= 200 && res.statusCode < 300 && payload.code === 0 && url) {
+        resolve(url)
+        return
+      }
+      reject(new Error(payload.message || `上传失败: ${res.statusCode}`))
+    },
+    fail: (err) => {
+      reject(new Error(err?.errMsg || '上传图片失败'))
+    }
+  })
+    })
+    .catch((err) => {
+      reject(err instanceof Error ? err : new Error('上传图片失败'))
+    })
+})
 
 export const recognizePlantByImage = ({ filePath, fileName = 'plant.jpg' }) => new Promise((resolve, reject) => {
   const normalizedPath = `${filePath || ''}`.trim()

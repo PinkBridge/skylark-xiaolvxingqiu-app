@@ -78,7 +78,7 @@
 
 <script setup>
 import { reactive, ref } from 'vue'
-import { getUserProfile, updateUserProfile } from '@/api'
+import { getUserProfile, updateUserProfile, uploadImageResource } from '@/api'
 import { readCachedWxProfile, saveWxAuthProfile } from '@/utils/auth'
 
 const defaultAvatar = 'https://cdn.uviewui.com/uview/example/button.png'
@@ -130,8 +130,17 @@ const chooseAvatar = () => {
 		count: 1,
 		sizeType: ['compressed'],
 		sourceType: ['camera', 'album'],
-		success: (res) => {
-			form.avatar = res.tempFilePaths?.[0] || form.avatar
+		success: async (res) => {
+			const selectedPath = res.tempFilePaths?.[0] || ''
+			if (!selectedPath) return
+			try {
+				form.avatar = await uploadImageResource({ filePath: selectedPath, fileName: 'avatar.jpg' })
+			} catch (err) {
+				uni.showToast({
+					title: err?.message || '头像上传失败',
+					icon: 'none'
+				})
+			}
 		}
 	})
 }
@@ -169,14 +178,20 @@ const saveProfile = () => {
 		return
 	}
 
-	updateUserProfile({
-		avatar: form.avatar || defaultAvatar,
-		name: form.name.trim(),
-		gender: form.gender,
-		birthday: form.birthday,
-		motto: form.motto.trim() || '每一份生命都值得尊重和呵护!',
-		phone: form.phone || ''
-	})
+	Promise.resolve()
+		.then(async () => {
+			const avatar = form.avatar ? await uploadImageResource({ filePath: form.avatar, fileName: 'avatar.jpg' }) : defaultAvatar
+			form.avatar = avatar || defaultAvatar
+			return {
+				avatar: form.avatar || defaultAvatar,
+				name: form.name.trim(),
+				gender: form.gender,
+				birthday: form.birthday,
+				motto: form.motto.trim() || '每一份生命都值得尊重和呵护!',
+				phone: form.phone || ''
+			}
+		})
+		.then((payload) => updateUserProfile(payload))
 		.then(() => {
 			saveWxAuthProfile({
 				avatar: form.avatar || defaultAvatar,

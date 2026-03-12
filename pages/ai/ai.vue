@@ -31,7 +31,7 @@
 <script setup>
 import { ref } from 'vue'
 import { onLoad, onShow } from '@dcloudio/uni-app'
-import { createAiCollection, listGardens } from '@/api'
+import { createAiCollection, listGardens, uploadImageResource } from '@/api'
 
 const AI_RESULT_STORAGE_KEY = 'aiRecognizeResult'
 const plantName = ref('未知植物')
@@ -70,6 +70,27 @@ const buildPayload = () => ({
 	recognizedImageUrl: recognizedImageUrl.value,
 	source: 'baidu_ai'
 })
+
+const ensureAiImagesUploaded = async () => {
+	if (recognizedImageUrl.value) {
+		recognizedImageUrl.value = await uploadImageResource({
+			filePath: recognizedImageUrl.value,
+			fileName: 'recognized.jpg'
+		})
+	}
+	if (imageUrl.value) {
+		imageUrl.value = await uploadImageResource({
+			filePath: imageUrl.value,
+			fileName: 'baidu.jpg'
+		})
+	}
+	const imgList = [recognizedImageUrl.value, imageUrl.value]
+		.map((item) => `${item || ''}`.trim())
+		.filter((item, index, arr) => item && arr.indexOf(item) === index)
+	if (imgList.length) {
+		images.value = imgList
+	}
+}
 
 const gotoAddPlantPage = (gardenId) => {
 	const payload = encodeURIComponent(JSON.stringify(buildPayload()))
@@ -112,7 +133,9 @@ onShow(() => {
 const onCollect = () => {
 	if (collecting.value) return
 	collecting.value = true
-	createAiCollection(buildPayload())
+	Promise.resolve()
+		.then(() => ensureAiImagesUploaded())
+		.then(() => createAiCollection(buildPayload()))
 		.then(() => {
 			uni.showToast({
 				title: '已加入收藏',
@@ -133,7 +156,9 @@ const onCollect = () => {
 const onAddGarden = () => {
 	if (addingGarden.value) return
 	addingGarden.value = true
-	listGardens()
+	Promise.resolve()
+		.then(() => ensureAiImagesUploaded())
+		.then(() => listGardens())
 		.then((rows) => {
 			const gardens = rows || []
 			if (!gardens.length) {

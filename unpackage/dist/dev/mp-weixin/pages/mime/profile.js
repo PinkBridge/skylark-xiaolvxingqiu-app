@@ -69,9 +69,19 @@ const _sfc_main = {
         count: 1,
         sizeType: ["compressed"],
         sourceType: ["camera", "album"],
-        success: (res) => {
+        success: async (res) => {
           var _a;
-          form.avatar = ((_a = res.tempFilePaths) == null ? void 0 : _a[0]) || form.avatar;
+          const selectedPath = ((_a = res.tempFilePaths) == null ? void 0 : _a[0]) || "";
+          if (!selectedPath)
+            return;
+          try {
+            form.avatar = await api_index.uploadImageResource({ filePath: selectedPath, fileName: "avatar.jpg" });
+          } catch (err) {
+            common_vendor.index.showToast({
+              title: (err == null ? void 0 : err.message) || "头像上传失败",
+              icon: "none"
+            });
+          }
         }
       });
     };
@@ -103,14 +113,18 @@ const _sfc_main = {
         });
         return;
       }
-      api_index.updateUserProfile({
-        avatar: form.avatar || defaultAvatar,
-        name: form.name.trim(),
-        gender: form.gender,
-        birthday: form.birthday,
-        motto: form.motto.trim() || "每一份生命都值得尊重和呵护!",
-        phone: form.phone || ""
-      }).then(() => {
+      Promise.resolve().then(async () => {
+        const avatar = form.avatar ? await api_index.uploadImageResource({ filePath: form.avatar, fileName: "avatar.jpg" }) : defaultAvatar;
+        form.avatar = avatar || defaultAvatar;
+        return {
+          avatar: form.avatar || defaultAvatar,
+          name: form.name.trim(),
+          gender: form.gender,
+          birthday: form.birthday,
+          motto: form.motto.trim() || "每一份生命都值得尊重和呵护!",
+          phone: form.phone || ""
+        };
+      }).then((payload) => api_index.updateUserProfile(payload)).then(() => {
         utils_auth.saveWxAuthProfile({
           avatar: form.avatar || defaultAvatar,
           name: form.name.trim(),

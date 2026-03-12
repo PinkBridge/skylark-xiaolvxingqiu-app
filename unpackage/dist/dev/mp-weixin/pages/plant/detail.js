@@ -605,9 +605,19 @@ const _sfc_main = {
         count: 1,
         sizeType: ["compressed"],
         sourceType: ["camera", "album"],
-        success: (res) => {
+        success: async (res) => {
           var _a;
-          focusForm.photo = ((_a = res.tempFilePaths) == null ? void 0 : _a[0]) || "";
+          const selectedPath = ((_a = res.tempFilePaths) == null ? void 0 : _a[0]) || "";
+          if (!selectedPath)
+            return;
+          try {
+            focusForm.photo = await api_index.uploadImageResource({ filePath: selectedPath, fileName: "focus.jpg" });
+          } catch (err) {
+            common_vendor.index.showToast({
+              title: (err == null ? void 0 : err.message) || "图片上传失败",
+              icon: "none"
+            });
+          }
         }
       });
     };
@@ -626,10 +636,13 @@ const _sfc_main = {
         });
         return;
       }
-      api_index.setPlantFocus(currentPlant.value.id, {
-        photoUrl: focusForm.photo,
-        reason: focusForm.reason.trim()
-      }).then((data) => {
+      Promise.resolve().then(async () => {
+        focusForm.photo = await api_index.uploadImageResource({ filePath: focusForm.photo, fileName: "focus.jpg" });
+        return {
+          photoUrl: focusForm.photo,
+          reason: focusForm.reason.trim()
+        };
+      }).then((payload) => api_index.setPlantFocus(currentPlant.value.id, payload)).then((data) => {
         currentPlant.value.focused = !!(data == null ? void 0 : data.focused);
         currentPlant.value.focusReason = (data == null ? void 0 : data.focusReason) || "";
         currentPlant.value.focusPhoto = (data == null ? void 0 : data.focusPhoto) || "";

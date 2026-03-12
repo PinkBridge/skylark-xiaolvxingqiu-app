@@ -76,7 +76,7 @@
 <script setup>
 import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { listCareTasks, listGardens, listPlants, recognizePlantByImage, updateUserProfile } from '@/api'
+import { listCareTasks, listGardens, listPlants, recognizePlantByImage, updateUserProfile, uploadImageResource } from '@/api'
 import { readCachedWxProfile, saveWxAuthProfile } from '@/utils/auth'
 
 const SELECTED_GARDEN_KEY = 'selectedGardenId'
@@ -150,7 +150,7 @@ const createFooterStats = (garden) => [
 		icon: 'heart-fill',
 		color: '#33c26d',
 		label: `今日养护 ${garden?.todayCareCount || 0}`,
-		path: '/pages/plant/plant',
+		path: '/pages/care/care',
 		mode: 'switchTab',
 		gardenId: garden?.id ?? '',
 		plantFilter: 'todo'
@@ -257,9 +257,12 @@ const startRecognize = () => {
 					uni.showLoading({
 						title: '识别中...'
 					})
-					recognizePlantByImage({ filePath })
-						.then((result) => {
-							gotoRecognizeResult({ filePath, result })
+					Promise.all([
+						recognizePlantByImage({ filePath }),
+						uploadImageResource({ filePath, fileName: 'recognize.jpg' })
+					])
+						.then(([result, uploadedPath]) => {
+							gotoRecognizeResult({ filePath: uploadedPath || filePath, result })
 						})
 						.catch((err) => {
 							uni.showToast({
@@ -292,7 +295,7 @@ const loadCountsByGarden = () => {
 			]).then(([plants, tasks, focusedPlants]) => ({
 				id: garden.id,
 				plantCount: (plants || []).length,
-				todayCareCount: (tasks || []).filter((task) => task?.offset === 0).length,
+				todayCareCount: (tasks || []).filter((task) => task?.offset === 0 && !task?.completed).length,
 				focusCount: (focusedPlants || []).length
 			}))
 				.catch(() => ({
@@ -470,7 +473,7 @@ const onFooterAction = (item) => {
 	}
 
 	.card-title {
-		font-size: 30rpx;
+		font-size: 32rpx;
 		font-weight: 700;
 		color: #1f7a44;
 		max-width: 210rpx;

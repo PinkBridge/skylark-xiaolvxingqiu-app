@@ -110,7 +110,7 @@
 
 <script setup>
 import { reactive, ref } from 'vue'
-import { getGardenInfo, updateGardenInfo } from '@/api'
+import { getGardenInfo, updateGardenInfo, uploadImageResource } from '@/api'
 
 const defaultGardenInfo = {
 	title: '我的莫奈花园',
@@ -168,10 +168,18 @@ const onImageSourceSelect = (action) => {
 		count: 1,
 		sizeType: ['compressed'],
 		sourceType: action.sourceType,
-		success: (res) => {
+		success: async (res) => {
 			const imageUrl = res.tempFilePaths?.[0] || ''
 			if (!imageUrl) return
-			form[imageTargetField.value] = imageUrl
+			try {
+				const uploadedUrl = await uploadImageResource({ filePath: imageUrl })
+				form[imageTargetField.value] = uploadedUrl
+			} catch (err) {
+				uni.showToast({
+					title: err?.message || '图片上传失败',
+					icon: 'none'
+				})
+			}
 		}
 	})
 }
@@ -212,13 +220,23 @@ const saveGardenInfo = () => {
 		return
 	}
 
-	updateGardenInfo({
-		title: form.title.trim(),
-		subTitle: form.subTitle,
-		thumb: form.thumb,
-		image: form.image,
-		description: form.description.trim()
-	})
+	Promise.resolve()
+		.then(async () => {
+			if (form.thumb) {
+				form.thumb = await uploadImageResource({ filePath: form.thumb, fileName: 'garden-thumb.jpg' })
+			}
+			if (form.image) {
+				form.image = await uploadImageResource({ filePath: form.image, fileName: 'garden-cover.jpg' })
+			}
+			return {
+				title: form.title.trim(),
+				subTitle: form.subTitle,
+				thumb: form.thumb,
+				image: form.image,
+				description: form.description.trim()
+			}
+		})
+		.then((payload) => updateGardenInfo(payload))
 		.then(() => {
 			uni.showToast({
 				title: '保存成功',

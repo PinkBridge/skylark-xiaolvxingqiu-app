@@ -359,6 +359,34 @@ const _sfc_main = {
       photoUploadTarget.value = target;
       showPhotoSourceSheet.value = true;
     };
+    const uploadPickedImages = async (picked = [], fileNamePrefix = "care") => {
+      const paths = Array.isArray(picked) ? picked.filter(Boolean) : [];
+      if (!paths.length)
+        return [];
+      return Promise.all(
+        paths.map(
+          (path, idx) => api_index.uploadImageResource({
+            filePath: path,
+            fileName: `${fileNamePrefix}-${idx + 1}.jpg`
+          })
+        )
+      );
+    };
+    const ensureUploadedPath = async (filePath, fileNamePrefix = "care") => {
+      const normalized = `${filePath || ""}`.trim();
+      if (!normalized)
+        return "";
+      return api_index.uploadImageResource({ filePath: normalized, fileName: `${fileNamePrefix}.jpg` });
+    };
+    const ensureUploadedArray = async (filePaths = [], fileNamePrefix = "care") => {
+      const paths = Array.isArray(filePaths) ? filePaths.filter(Boolean).map((item) => `${item || ""}`.trim()) : [];
+      if (!paths.length)
+        return [];
+      return Promise.all(paths.map((path, idx) => api_index.uploadImageResource({
+        filePath: path,
+        fileName: `${fileNamePrefix}-${idx + 1}.jpg`
+      })));
+    };
     const onPhotoSourceSelect = (action) => {
       var _a;
       showPhotoSourceSheet.value = false;
@@ -375,9 +403,21 @@ const _sfc_main = {
         count: maxCount,
         sizeType: ["compressed"],
         sourceType: action.sourceType,
-        success: (res) => {
+        success: async (res) => {
           const picked = Array.isArray(res.tempFilePaths) ? res.tempFilePaths.filter(Boolean) : [];
-          const photoPath = picked[0] || "";
+          if (!picked.length)
+            return;
+          let uploaded = [];
+          try {
+            uploaded = await uploadPickedImages(picked, photoUploadTarget.value || "care");
+          } catch (err) {
+            common_vendor.index.showToast({
+              title: (err == null ? void 0 : err.message) || "图片上传失败",
+              icon: "none"
+            });
+            return;
+          }
+          const photoPath = uploaded[0] || "";
           if (photoUploadTarget.value === "fertilize") {
             fertilizeForm.photo = photoPath;
             return;
@@ -391,7 +431,7 @@ const _sfc_main = {
             return;
           }
           if (photoUploadTarget.value === "shot") {
-            shotForm.photos = [...shotForm.photos || [], ...picked].slice(0, 9);
+            shotForm.photos = [...shotForm.photos || [], ...uploaded].slice(0, 9);
             return;
           }
           if (photoUploadTarget.value === "measure") {
@@ -424,16 +464,19 @@ const _sfc_main = {
       });
     };
     const submitWateringRecord = () => {
-      var _a;
       const taskId = activeWateringTaskId.value;
       if (!taskId)
         return;
-      api_index.completeCareTask(taskId, {
-        amount: wateringForm.amount ? Number(wateringForm.amount) : null,
-        method: wateringForm.method || null,
-        photo: wateringForm.photo || null,
-        note: ((_a = wateringForm.note) == null ? void 0 : _a.trim()) || null
-      }).then(() => {
+      Promise.resolve().then(async () => {
+        var _a;
+        wateringForm.photo = await ensureUploadedPath(wateringForm.photo, "watering");
+        return {
+          amount: wateringForm.amount ? Number(wateringForm.amount) : null,
+          method: wateringForm.method || null,
+          photo: wateringForm.photo || null,
+          note: ((_a = wateringForm.note) == null ? void 0 : _a.trim()) || null
+        };
+      }).then((payload) => api_index.completeCareTask(taskId, payload)).then(() => {
         showWateringPopup.value = false;
         loadCareTasks();
         loadCompletedHistory();
@@ -449,15 +492,18 @@ const _sfc_main = {
       });
     };
     const submitFertilizeRecord = () => {
-      var _a;
       const taskId = activeFertilizeTaskId.value;
       if (!taskId)
         return;
-      api_index.completeCareTask(taskId, {
-        material: fertilizeForm.material || null,
-        photo: fertilizeForm.photo || null,
-        note: ((_a = fertilizeForm.note) == null ? void 0 : _a.trim()) || null
-      }).then(() => {
+      Promise.resolve().then(async () => {
+        var _a;
+        fertilizeForm.photo = await ensureUploadedPath(fertilizeForm.photo, "fertilize");
+        return {
+          material: fertilizeForm.material || null,
+          photo: fertilizeForm.photo || null,
+          note: ((_a = fertilizeForm.note) == null ? void 0 : _a.trim()) || null
+        };
+      }).then((payload) => api_index.completeCareTask(taskId, payload)).then(() => {
         showFertilizePopup.value = false;
         loadCareTasks();
         loadCompletedHistory();
@@ -467,15 +513,18 @@ const _sfc_main = {
       });
     };
     const submitPruneRecord = () => {
-      var _a;
       const taskId = activePruneTaskId.value;
       if (!taskId)
         return;
-      api_index.completeCareTask(taskId, {
-        part: pruneForm.part || null,
-        photo: pruneForm.photo || null,
-        note: ((_a = pruneForm.note) == null ? void 0 : _a.trim()) || null
-      }).then(() => {
+      Promise.resolve().then(async () => {
+        var _a;
+        pruneForm.photo = await ensureUploadedPath(pruneForm.photo, "prune");
+        return {
+          part: pruneForm.part || null,
+          photo: pruneForm.photo || null,
+          note: ((_a = pruneForm.note) == null ? void 0 : _a.trim()) || null
+        };
+      }).then((payload) => api_index.completeCareTask(taskId, payload)).then(() => {
         showPrunePopup.value = false;
         loadCareTasks();
         loadCompletedHistory();
@@ -485,15 +534,18 @@ const _sfc_main = {
       });
     };
     const submitRepotRecord = () => {
-      var _a;
       const taskId = activeRepotTaskId.value;
       if (!taskId)
         return;
-      api_index.completeCareTask(taskId, {
-        potSize: repotForm.potSize || null,
-        photo: repotForm.photo || null,
-        note: ((_a = repotForm.note) == null ? void 0 : _a.trim()) || null
-      }).then(() => {
+      Promise.resolve().then(async () => {
+        var _a;
+        repotForm.photo = await ensureUploadedPath(repotForm.photo, "repot");
+        return {
+          potSize: repotForm.potSize || null,
+          photo: repotForm.photo || null,
+          note: ((_a = repotForm.note) == null ? void 0 : _a.trim()) || null
+        };
+      }).then((payload) => api_index.completeCareTask(taskId, payload)).then(() => {
         showRepotPopup.value = false;
         loadCareTasks();
         loadCompletedHistory();
@@ -503,7 +555,6 @@ const _sfc_main = {
       });
     };
     const submitShotRecord = () => {
-      var _a;
       if (!shotForm.photos.length) {
         common_vendor.index.showToast({
           title: "请先上传图片",
@@ -521,11 +572,15 @@ const _sfc_main = {
       const taskId = activeShotTaskId.value;
       if (!taskId)
         return;
-      api_index.completeCareTask(taskId, {
-        photo: shotForm.photos[0] || null,
-        photos: shotForm.photos.length ? shotForm.photos : null,
-        note: ((_a = shotForm.note) == null ? void 0 : _a.trim()) || null
-      }).then(() => {
+      Promise.resolve().then(async () => {
+        var _a;
+        shotForm.photos = await ensureUploadedArray(shotForm.photos, "shot");
+        return {
+          photo: shotForm.photos[0] || null,
+          photos: shotForm.photos.length ? shotForm.photos : null,
+          note: ((_a = shotForm.note) == null ? void 0 : _a.trim()) || null
+        };
+      }).then((payload) => api_index.completeCareTask(taskId, payload)).then(() => {
         showShotPopup.value = false;
         loadCareTasks();
         loadCompletedHistory();
@@ -535,16 +590,19 @@ const _sfc_main = {
       });
     };
     const submitMeasureRecord = () => {
-      var _a;
       const taskId = activeMeasureTaskId.value;
       if (!taskId)
         return;
-      api_index.completeCareTask(taskId, {
-        weight: measureForm.weight ? Number(measureForm.weight) : null,
-        height: measureForm.height ? Number(measureForm.height) : null,
-        photo: measureForm.photo || null,
-        note: ((_a = measureForm.note) == null ? void 0 : _a.trim()) || null
-      }).then(() => {
+      Promise.resolve().then(async () => {
+        var _a;
+        measureForm.photo = await ensureUploadedPath(measureForm.photo, "measure");
+        return {
+          weight: measureForm.weight ? Number(measureForm.weight) : null,
+          height: measureForm.height ? Number(measureForm.height) : null,
+          photo: measureForm.photo || null,
+          note: ((_a = measureForm.note) == null ? void 0 : _a.trim()) || null
+        };
+      }).then((payload) => api_index.completeCareTask(taskId, payload)).then(() => {
         showMeasurePopup.value = false;
         loadCareTasks();
         loadCompletedHistory();
@@ -554,7 +612,6 @@ const _sfc_main = {
       });
     };
     const submitLoosenRecord = () => {
-      var _a;
       if (!loosenForm.photo) {
         common_vendor.index.showToast({
           title: "请先上传图片",
@@ -572,10 +629,14 @@ const _sfc_main = {
       const taskId = activeLoosenTaskId.value;
       if (!taskId)
         return;
-      api_index.completeCareTask(taskId, {
-        photo: loosenForm.photo || null,
-        note: ((_a = loosenForm.note) == null ? void 0 : _a.trim()) || null
-      }).then(() => {
+      Promise.resolve().then(async () => {
+        var _a;
+        loosenForm.photo = await ensureUploadedPath(loosenForm.photo, "loosen");
+        return {
+          photo: loosenForm.photo || null,
+          note: ((_a = loosenForm.note) == null ? void 0 : _a.trim()) || null
+        };
+      }).then((payload) => api_index.completeCareTask(taskId, payload)).then(() => {
         showLoosenPopup.value = false;
         loadCareTasks();
         loadCompletedHistory();
@@ -585,7 +646,6 @@ const _sfc_main = {
       });
     };
     const submitBugRecord = () => {
-      var _a;
       if (!bugForm.type) {
         common_vendor.index.showToast({
           title: "请选择病虫害类型",
@@ -603,12 +663,16 @@ const _sfc_main = {
       const taskId = activeBugTaskId.value;
       if (!taskId)
         return;
-      api_index.completeCareTask(taskId, {
-        type: bugForm.type || null,
-        treatment: bugForm.treatment || null,
-        photo: bugForm.photo || null,
-        note: ((_a = bugForm.note) == null ? void 0 : _a.trim()) || null
-      }).then(() => {
+      Promise.resolve().then(async () => {
+        var _a;
+        bugForm.photo = await ensureUploadedPath(bugForm.photo, "bug");
+        return {
+          type: bugForm.type || null,
+          treatment: bugForm.treatment || null,
+          photo: bugForm.photo || null,
+          note: ((_a = bugForm.note) == null ? void 0 : _a.trim()) || null
+        };
+      }).then((payload) => api_index.completeCareTask(taskId, payload)).then(() => {
         showBugPopup.value = false;
         loadCareTasks();
         loadCompletedHistory();

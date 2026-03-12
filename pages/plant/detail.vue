@@ -411,7 +411,8 @@ import {
 	listPlantGrowthRecords,
 	saveCarePlanConfig,
 	setPlantFocus,
-	updatePlant
+	updatePlant,
+	uploadImageResource
 } from '@/api'
 
 const detailTabs = ['生长记录', '植物相册', '养护计划', '统计分析']
@@ -1035,8 +1036,17 @@ const onPickFocusPhoto = () => {
 		count: 1,
 		sizeType: ['compressed'],
 		sourceType: ['camera', 'album'],
-		success: (res) => {
-			focusForm.photo = res.tempFilePaths?.[0] || ''
+		success: async (res) => {
+			const selectedPath = res.tempFilePaths?.[0] || ''
+			if (!selectedPath) return
+			try {
+				focusForm.photo = await uploadImageResource({ filePath: selectedPath, fileName: 'focus.jpg' })
+			} catch (err) {
+				uni.showToast({
+					title: err?.message || '图片上传失败',
+					icon: 'none'
+				})
+			}
 		}
 	})
 }
@@ -1056,10 +1066,15 @@ const onSubmitFocus = () => {
 		})
 		return
 	}
-	setPlantFocus(currentPlant.value.id, {
-		photoUrl: focusForm.photo,
-		reason: focusForm.reason.trim()
-	})
+	Promise.resolve()
+		.then(async () => {
+			focusForm.photo = await uploadImageResource({ filePath: focusForm.photo, fileName: 'focus.jpg' })
+			return {
+				photoUrl: focusForm.photo,
+				reason: focusForm.reason.trim()
+			}
+		})
+		.then((payload) => setPlantFocus(currentPlant.value.id, payload))
 		.then((data) => {
 			currentPlant.value.focused = !!data?.focused
 			currentPlant.value.focusReason = data?.focusReason || ''

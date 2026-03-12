@@ -724,7 +724,7 @@
 <script setup>
 import { computed, reactive, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { completeCareTask, listCareActivitiesByMonth, listCareTasks } from '@/api'
+import { completeCareTask, listCareActivitiesByMonth, listCareTasks, uploadImageResource } from '@/api'
 
 const SELECTED_GARDEN_KEY = 'selectedGardenId'
 const navMetrics = ref(resolveNavMetrics())
@@ -1086,6 +1086,34 @@ const openPhotoSourceSheet = (target = 'watering') => {
 	showPhotoSourceSheet.value = true
 }
 
+const uploadPickedImages = async (picked = [], fileNamePrefix = 'care') => {
+	const paths = Array.isArray(picked) ? picked.filter(Boolean) : []
+	if (!paths.length) return []
+	return Promise.all(
+		paths.map((path, idx) =>
+			uploadImageResource({
+				filePath: path,
+				fileName: `${fileNamePrefix}-${idx + 1}.jpg`
+			})
+		)
+	)
+}
+
+const ensureUploadedPath = async (filePath, fileNamePrefix = 'care') => {
+	const normalized = `${filePath || ''}`.trim()
+	if (!normalized) return ''
+	return uploadImageResource({ filePath: normalized, fileName: `${fileNamePrefix}.jpg` })
+}
+
+const ensureUploadedArray = async (filePaths = [], fileNamePrefix = 'care') => {
+	const paths = Array.isArray(filePaths) ? filePaths.filter(Boolean).map((item) => `${item || ''}`.trim()) : []
+	if (!paths.length) return []
+	return Promise.all(paths.map((path, idx) => uploadImageResource({
+		filePath: path,
+		fileName: `${fileNamePrefix}-${idx + 1}.jpg`
+	})))
+}
+
 const onPhotoSourceSelect = (action) => {
 	showPhotoSourceSheet.value = false
 	const remaining = 9 - (shotForm.photos?.length || 0)
@@ -1101,9 +1129,20 @@ const onPhotoSourceSelect = (action) => {
 		count: maxCount,
 		sizeType: ['compressed'],
 		sourceType: action.sourceType,
-		success: (res) => {
+		success: async (res) => {
 			const picked = Array.isArray(res.tempFilePaths) ? res.tempFilePaths.filter(Boolean) : []
-			const photoPath = picked[0] || ''
+			if (!picked.length) return
+			let uploaded = []
+			try {
+				uploaded = await uploadPickedImages(picked, photoUploadTarget.value || 'care')
+			} catch (err) {
+				uni.showToast({
+					title: err?.message || '图片上传失败',
+					icon: 'none'
+				})
+				return
+			}
+			const photoPath = uploaded[0] || ''
 			if (photoUploadTarget.value === 'fertilize') {
 				fertilizeForm.photo = photoPath
 				return
@@ -1117,7 +1156,7 @@ const onPhotoSourceSelect = (action) => {
 				return
 			}
 			if (photoUploadTarget.value === 'shot') {
-				shotForm.photos = [...(shotForm.photos || []), ...picked].slice(0, 9)
+				shotForm.photos = [...(shotForm.photos || []), ...uploaded].slice(0, 9)
 				return
 			}
 			if (photoUploadTarget.value === 'measure') {
@@ -1153,12 +1192,17 @@ const onPreviewShotPhoto = (idx) => {
 const submitWateringRecord = () => {
 	const taskId = activeWateringTaskId.value
 	if (!taskId) return
-	completeCareTask(taskId, {
-		amount: wateringForm.amount ? Number(wateringForm.amount) : null,
-		method: wateringForm.method || null,
-		photo: wateringForm.photo || null,
-		note: wateringForm.note?.trim() || null
-	})
+	Promise.resolve()
+		.then(async () => {
+			wateringForm.photo = await ensureUploadedPath(wateringForm.photo, 'watering')
+			return {
+				amount: wateringForm.amount ? Number(wateringForm.amount) : null,
+				method: wateringForm.method || null,
+				photo: wateringForm.photo || null,
+				note: wateringForm.note?.trim() || null
+			}
+		})
+		.then((payload) => completeCareTask(taskId, payload))
 		.then(() => {
 			showWateringPopup.value = false
 			loadCareTasks()
@@ -1179,11 +1223,17 @@ const submitWateringRecord = () => {
 const submitFertilizeRecord = () => {
 	const taskId = activeFertilizeTaskId.value
 	if (!taskId) return
-	completeCareTask(taskId, {
-		material: fertilizeForm.material || null,
-		photo: fertilizeForm.photo || null,
-		note: fertilizeForm.note?.trim() || null
-	}).then(() => {
+	Promise.resolve()
+		.then(async () => {
+			fertilizeForm.photo = await ensureUploadedPath(fertilizeForm.photo, 'fertilize')
+			return {
+				material: fertilizeForm.material || null,
+				photo: fertilizeForm.photo || null,
+				note: fertilizeForm.note?.trim() || null
+			}
+		})
+		.then((payload) => completeCareTask(taskId, payload))
+		.then(() => {
 		showFertilizePopup.value = false
 		loadCareTasks()
 		loadCompletedHistory()
@@ -1196,11 +1246,17 @@ const submitFertilizeRecord = () => {
 const submitPruneRecord = () => {
 	const taskId = activePruneTaskId.value
 	if (!taskId) return
-	completeCareTask(taskId, {
-		part: pruneForm.part || null,
-		photo: pruneForm.photo || null,
-		note: pruneForm.note?.trim() || null
-	}).then(() => {
+	Promise.resolve()
+		.then(async () => {
+			pruneForm.photo = await ensureUploadedPath(pruneForm.photo, 'prune')
+			return {
+				part: pruneForm.part || null,
+				photo: pruneForm.photo || null,
+				note: pruneForm.note?.trim() || null
+			}
+		})
+		.then((payload) => completeCareTask(taskId, payload))
+		.then(() => {
 		showPrunePopup.value = false
 		loadCareTasks()
 		loadCompletedHistory()
@@ -1213,11 +1269,17 @@ const submitPruneRecord = () => {
 const submitRepotRecord = () => {
 	const taskId = activeRepotTaskId.value
 	if (!taskId) return
-	completeCareTask(taskId, {
-		potSize: repotForm.potSize || null,
-		photo: repotForm.photo || null,
-		note: repotForm.note?.trim() || null
-	}).then(() => {
+	Promise.resolve()
+		.then(async () => {
+			repotForm.photo = await ensureUploadedPath(repotForm.photo, 'repot')
+			return {
+				potSize: repotForm.potSize || null,
+				photo: repotForm.photo || null,
+				note: repotForm.note?.trim() || null
+			}
+		})
+		.then((payload) => completeCareTask(taskId, payload))
+		.then(() => {
 		showRepotPopup.value = false
 		loadCareTasks()
 		loadCompletedHistory()
@@ -1245,11 +1307,17 @@ const submitShotRecord = () => {
 
 	const taskId = activeShotTaskId.value
 	if (!taskId) return
-	completeCareTask(taskId, {
-		photo: shotForm.photos[0] || null,
-		photos: shotForm.photos.length ? shotForm.photos : null,
-		note: shotForm.note?.trim() || null
-	}).then(() => {
+	Promise.resolve()
+		.then(async () => {
+			shotForm.photos = await ensureUploadedArray(shotForm.photos, 'shot')
+			return {
+				photo: shotForm.photos[0] || null,
+				photos: shotForm.photos.length ? shotForm.photos : null,
+				note: shotForm.note?.trim() || null
+			}
+		})
+		.then((payload) => completeCareTask(taskId, payload))
+		.then(() => {
 		showShotPopup.value = false
 		loadCareTasks()
 		loadCompletedHistory()
@@ -1262,12 +1330,18 @@ const submitShotRecord = () => {
 const submitMeasureRecord = () => {
 	const taskId = activeMeasureTaskId.value
 	if (!taskId) return
-	completeCareTask(taskId, {
-		weight: measureForm.weight ? Number(measureForm.weight) : null,
-		height: measureForm.height ? Number(measureForm.height) : null,
-		photo: measureForm.photo || null,
-		note: measureForm.note?.trim() || null
-	}).then(() => {
+	Promise.resolve()
+		.then(async () => {
+			measureForm.photo = await ensureUploadedPath(measureForm.photo, 'measure')
+			return {
+				weight: measureForm.weight ? Number(measureForm.weight) : null,
+				height: measureForm.height ? Number(measureForm.height) : null,
+				photo: measureForm.photo || null,
+				note: measureForm.note?.trim() || null
+			}
+		})
+		.then((payload) => completeCareTask(taskId, payload))
+		.then(() => {
 		showMeasurePopup.value = false
 		loadCareTasks()
 		loadCompletedHistory()
@@ -1295,10 +1369,16 @@ const submitLoosenRecord = () => {
 
 	const taskId = activeLoosenTaskId.value
 	if (!taskId) return
-	completeCareTask(taskId, {
-		photo: loosenForm.photo || null,
-		note: loosenForm.note?.trim() || null
-	}).then(() => {
+	Promise.resolve()
+		.then(async () => {
+			loosenForm.photo = await ensureUploadedPath(loosenForm.photo, 'loosen')
+			return {
+				photo: loosenForm.photo || null,
+				note: loosenForm.note?.trim() || null
+			}
+		})
+		.then((payload) => completeCareTask(taskId, payload))
+		.then(() => {
 		showLoosenPopup.value = false
 		loadCareTasks()
 		loadCompletedHistory()
@@ -1326,12 +1406,18 @@ const submitBugRecord = () => {
 
 	const taskId = activeBugTaskId.value
 	if (!taskId) return
-	completeCareTask(taskId, {
-		type: bugForm.type || null,
-		treatment: bugForm.treatment || null,
-		photo: bugForm.photo || null,
-		note: bugForm.note?.trim() || null
-	}).then(() => {
+	Promise.resolve()
+		.then(async () => {
+			bugForm.photo = await ensureUploadedPath(bugForm.photo, 'bug')
+			return {
+				type: bugForm.type || null,
+				treatment: bugForm.treatment || null,
+				photo: bugForm.photo || null,
+				note: bugForm.note?.trim() || null
+			}
+		})
+		.then((payload) => completeCareTask(taskId, payload))
+		.then(() => {
 		showBugPopup.value = false
 		loadCareTasks()
 		loadCompletedHistory()

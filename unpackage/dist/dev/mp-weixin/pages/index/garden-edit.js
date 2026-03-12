@@ -72,12 +72,20 @@ const _sfc_main = {
         count: 1,
         sizeType: ["compressed"],
         sourceType: action.sourceType,
-        success: (res) => {
+        success: async (res) => {
           var _a;
           const imageUrl = ((_a = res.tempFilePaths) == null ? void 0 : _a[0]) || "";
           if (!imageUrl)
             return;
-          form[imageTargetField.value] = imageUrl;
+          try {
+            const uploadedUrl = await api_index.uploadImageResource({ filePath: imageUrl });
+            form[imageTargetField.value] = uploadedUrl;
+          } catch (err) {
+            common_vendor.index.showToast({
+              title: (err == null ? void 0 : err.message) || "图片上传失败",
+              icon: "none"
+            });
+          }
         }
       });
     };
@@ -112,13 +120,21 @@ const _sfc_main = {
         });
         return;
       }
-      api_index.updateGardenInfo({
-        title: form.title.trim(),
-        subTitle: form.subTitle,
-        thumb: form.thumb,
-        image: form.image,
-        description: form.description.trim()
-      }).then(() => {
+      Promise.resolve().then(async () => {
+        if (form.thumb) {
+          form.thumb = await api_index.uploadImageResource({ filePath: form.thumb, fileName: "garden-thumb.jpg" });
+        }
+        if (form.image) {
+          form.image = await api_index.uploadImageResource({ filePath: form.image, fileName: "garden-cover.jpg" });
+        }
+        return {
+          title: form.title.trim(),
+          subTitle: form.subTitle,
+          thumb: form.thumb,
+          image: form.image,
+          description: form.description.trim()
+        };
+      }).then((payload) => api_index.updateGardenInfo(payload)).then(() => {
         common_vendor.index.showToast({
           title: "保存成功",
           icon: "success"

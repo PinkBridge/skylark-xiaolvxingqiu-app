@@ -196,7 +196,7 @@
 <script setup>
 import { computed, reactive, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import { createPlant, getCarePlanConfig, getPlantById, saveCarePlanConfig, updatePlant as updatePlantApi } from '@/api'
+import { createPlant, getCarePlanConfig, getPlantById, saveCarePlanConfig, updatePlant as updatePlantApi, uploadImageResource } from '@/api'
 
 const cultivationOptions = ['土培', '水培']
 const cultivationIndex = ref(0)
@@ -337,8 +337,17 @@ const onImageSourceSelect = (action) => {
 		count: 1,
 		sizeType: ['compressed'],
 		sourceType: action.sourceType,
-		success: (res) => {
-			plantForm.image = res.tempFilePaths?.[0] || ''
+		success: async (res) => {
+			const selectedPath = res.tempFilePaths?.[0] || ''
+			if (!selectedPath) return
+			try {
+				plantForm.image = await uploadImageResource({ filePath: selectedPath, fileName: 'plant.jpg' })
+			} catch (err) {
+				uni.showToast({
+					title: err?.message || '图片上传失败',
+					icon: 'none'
+				})
+			}
 		}
 	})
 }
@@ -433,15 +442,6 @@ const onSubmitPlant = () => {
 		})
 		return
 	}
-	const payload = {
-		image: plantForm.image,
-		name: plantForm.name,
-		species: plantForm.species,
-		cultivationType: plantForm.cultivationType,
-		plantingDate: plantForm.plantingDate,
-		note: plantForm.note,
-		gardenId: selectedGardenId.value ? Number(selectedGardenId.value) : undefined
-	}
 	let carePlanReq = null
 	try {
 		carePlanReq = buildCarePlanRequest()
@@ -452,8 +452,20 @@ const onSubmitPlant = () => {
 		})
 		return
 	}
-	const req = editPlantId.value ? updatePlantApi(editPlantId.value, payload) : createPlant(payload)
-	req
+	Promise.resolve()
+		.then(async () => {
+			plantForm.image = await uploadImageResource({ filePath: plantForm.image, fileName: 'plant.jpg' })
+			return {
+				image: plantForm.image,
+				name: plantForm.name,
+				species: plantForm.species,
+				cultivationType: plantForm.cultivationType,
+				plantingDate: plantForm.plantingDate,
+				note: plantForm.note,
+				gardenId: selectedGardenId.value ? Number(selectedGardenId.value) : undefined
+			}
+		})
+		.then((payload) => (editPlantId.value ? updatePlantApi(editPlantId.value, payload) : createPlant(payload)))
 		.then((savedPlant) => {
 			const plantId = editPlantId.value || `${savedPlant?.id || ''}`.trim()
 			if (!plantId || !carePlanReq) return Promise.resolve()

@@ -156,9 +156,19 @@ const _sfc_main = {
         count: 1,
         sizeType: ["compressed"],
         sourceType: action.sourceType,
-        success: (res) => {
+        success: async (res) => {
           var _a;
-          plantForm.image = ((_a = res.tempFilePaths) == null ? void 0 : _a[0]) || "";
+          const selectedPath = ((_a = res.tempFilePaths) == null ? void 0 : _a[0]) || "";
+          if (!selectedPath)
+            return;
+          try {
+            plantForm.image = await api_index.uploadImageResource({ filePath: selectedPath, fileName: "plant.jpg" });
+          } catch (err) {
+            common_vendor.index.showToast({
+              title: (err == null ? void 0 : err.message) || "图片上传失败",
+              icon: "none"
+            });
+          }
         }
       });
     };
@@ -247,15 +257,6 @@ const _sfc_main = {
         });
         return;
       }
-      const payload = {
-        image: plantForm.image,
-        name: plantForm.name,
-        species: plantForm.species,
-        cultivationType: plantForm.cultivationType,
-        plantingDate: plantForm.plantingDate,
-        note: plantForm.note,
-        gardenId: selectedGardenId.value ? Number(selectedGardenId.value) : void 0
-      };
       let carePlanReq = null;
       try {
         carePlanReq = buildCarePlanRequest();
@@ -266,8 +267,18 @@ const _sfc_main = {
         });
         return;
       }
-      const req = editPlantId.value ? api_index.updatePlant(editPlantId.value, payload) : api_index.createPlant(payload);
-      req.then((savedPlant) => {
+      Promise.resolve().then(async () => {
+        plantForm.image = await api_index.uploadImageResource({ filePath: plantForm.image, fileName: "plant.jpg" });
+        return {
+          image: plantForm.image,
+          name: plantForm.name,
+          species: plantForm.species,
+          cultivationType: plantForm.cultivationType,
+          plantingDate: plantForm.plantingDate,
+          note: plantForm.note,
+          gardenId: selectedGardenId.value ? Number(selectedGardenId.value) : void 0
+        };
+      }).then((payload) => editPlantId.value ? api_index.updatePlant(editPlantId.value, payload) : api_index.createPlant(payload)).then((savedPlant) => {
         const plantId = editPlantId.value || `${(savedPlant == null ? void 0 : savedPlant.id) || ""}`.trim();
         if (!plantId || !carePlanReq)
           return Promise.resolve();

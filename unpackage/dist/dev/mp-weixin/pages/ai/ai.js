@@ -37,6 +37,24 @@ const _sfc_main = {
       recognizedImageUrl: recognizedImageUrl.value,
       source: "baidu_ai"
     });
+    const ensureAiImagesUploaded = async () => {
+      if (recognizedImageUrl.value) {
+        recognizedImageUrl.value = await api_index.uploadImageResource({
+          filePath: recognizedImageUrl.value,
+          fileName: "recognized.jpg"
+        });
+      }
+      if (imageUrl.value) {
+        imageUrl.value = await api_index.uploadImageResource({
+          filePath: imageUrl.value,
+          fileName: "baidu.jpg"
+        });
+      }
+      const imgList = [recognizedImageUrl.value, imageUrl.value].map((item) => `${item || ""}`.trim()).filter((item, index, arr) => item && arr.indexOf(item) === index);
+      if (imgList.length) {
+        images.value = imgList;
+      }
+    };
     const gotoAddPlantPage = (gardenId) => {
       const payload = encodeURIComponent(JSON.stringify(buildPayload()));
       const selectedGardenId = `${gardenId || ""}`.trim();
@@ -73,7 +91,7 @@ const _sfc_main = {
       if (collecting.value)
         return;
       collecting.value = true;
-      api_index.createAiCollection(buildPayload()).then(() => {
+      Promise.resolve().then(() => ensureAiImagesUploaded()).then(() => api_index.createAiCollection(buildPayload())).then(() => {
         common_vendor.index.showToast({
           title: "已加入收藏",
           icon: "none"
@@ -91,7 +109,7 @@ const _sfc_main = {
       if (addingGarden.value)
         return;
       addingGarden.value = true;
-      api_index.listGardens().then((rows) => {
+      Promise.resolve().then(() => ensureAiImagesUploaded()).then(() => api_index.listGardens()).then((rows) => {
         const gardens = rows || [];
         if (!gardens.length) {
           common_vendor.index.showModal({

@@ -72,7 +72,7 @@ const _sfc_main = {
         icon: "heart-fill",
         color: "#33c26d",
         label: `今日养护 ${(garden == null ? void 0 : garden.todayCareCount) || 0}`,
-        path: "/pages/plant/plant",
+        path: "/pages/care/care",
         mode: "switchTab",
         gardenId: (garden == null ? void 0 : garden.id) ?? "",
         plantFilter: "todo"
@@ -174,8 +174,11 @@ const _sfc_main = {
               common_vendor.index.showLoading({
                 title: "识别中..."
               });
-              api_index.recognizePlantByImage({ filePath }).then((result) => {
-                gotoRecognizeResult({ filePath, result });
+              Promise.all([
+                api_index.recognizePlantByImage({ filePath }),
+                api_index.uploadImageResource({ filePath, fileName: "recognize.jpg" })
+              ]).then(([result, uploadedPath]) => {
+                gotoRecognizeResult({ filePath: uploadedPath || filePath, result });
               }).catch((err) => {
                 common_vendor.index.showToast({
                   title: (err == null ? void 0 : err.message) || "识别失败，请稍后再试",
@@ -205,7 +208,7 @@ const _sfc_main = {
           ]).then(([plants, tasks, focusedPlants]) => ({
             id: garden.id,
             plantCount: (plants || []).length,
-            todayCareCount: (tasks || []).filter((task) => (task == null ? void 0 : task.offset) === 0).length,
+            todayCareCount: (tasks || []).filter((task) => (task == null ? void 0 : task.offset) === 0 && !(task == null ? void 0 : task.completed)).length,
             focusCount: (focusedPlants || []).length
           })).catch(() => ({
             id: garden.id,
