@@ -16,6 +16,8 @@
     "pages/mime/version",
     "pages/mime/feedback",
     "pages/mime/favorites",
+    "pages/mime/user-agreement",
+    "pages/mime/privacy-policy",
     "pages/ai/ai"
   ],
   "window": {
@@ -52,6 +54,14 @@
   },
   "domains": {
     "request": [
+      "https://tasia-unreputed-veda.ngrok-free.dev",
+      "https://xiaolvxingqiu-1256079722.cos.ap-guangzhou.myqcloud.com"
+    ],
+    "uploadFile": [
+      "https://tasia-unreputed-veda.ngrok-free.dev"
+    ],
+    "downloadFile": [
+      "https://xiaolvxingqiu-1256079722.cos.ap-guangzhou.myqcloud.com",
       "https://tasia-unreputed-veda.ngrok-free.dev"
     ]
   },

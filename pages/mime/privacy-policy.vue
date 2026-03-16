@@ -1,0 +1,73 @@
+<template>
+	<view class="doc-page">
+		<view class="doc-card">
+			<view class="doc-title">小绿星球隐私政策</view>
+			<view class="doc-time">更新日期：2026-03-13</view>
+			<text class="doc-paragraph">我们重视你的个人信息与隐私安全。本政策用于说明我们如何收集、使用、存储和保护你的信息，以及你可行使的权利。</text>
+			<view class="doc-subtitle">1. 我们收集的信息</view>
+			<text class="doc-paragraph">为实现基础功能，我们会收集微信登录标识（如 openid 对应信息）；在你主动授权时，可能收集手机号；在你主动填写反馈时，可能收集联系方式；在你主动上传时，收集图片内容用于识别或展示。</text>
+			<view class="doc-subtitle">2. 使用目的</view>
+			<text class="doc-paragraph">收集上述信息仅用于账号识别、功能实现（如手机号绑定、AI识别、养护提醒）、问题处理与服务优化，不会超范围使用。</text>
+			<view class="doc-subtitle">3. 信息存储与保护</view>
+			<text class="doc-paragraph">我们将通过加密传输、访问控制等安全措施保护你的信息。图片等资源可能存储在合规云服务中，仅用于业务场景访问。</text>
+			<view class="doc-subtitle">4. 信息共享</view>
+			<text class="doc-paragraph">除法律法规要求或取得你明确同意外，我们不会向无关第三方共享你的个人信息。</text>
+			<view class="doc-subtitle">5. 你的权利</view>
+			<text class="doc-paragraph">你可通过小程序设置管理授权，也可通过应用内“反馈和建议”联系我们，申请查询、更正或删除相关信息。</text>
+			<view class="doc-subtitle">6. 未成年人保护</view>
+			<text class="doc-paragraph">若你为未成年人，请在监护人指导下阅读并同意本政策后使用本服务。</text>
+			<view class="doc-subtitle">7. 信息保存期限</view>
+			<text class="doc-paragraph">我们仅在实现产品功能及履行法律义务所需的最短期限内保存你的个人信息，超出必要期限后将按法律法规要求进行删除或匿名化处理。</text>
+			<view class="doc-subtitle">8. 政策更新与通知</view>
+			<text class="doc-paragraph">当隐私政策发生重大变更时，我们会在应用内进行提示。更新后的政策发布后生效，你可随时在本页面查看最新版本。</text>
+		</view>
+	</view>
+</template>
+
+<script>
+export default {
+	name: 'PrivacyPolicyPage'
+}
+</script>
+
+<style scoped lang="scss">
+.doc-page {
+	min-height: 100vh;
+	padding: 24rpx;
+	background: #f6fcf8;
+}
+
+.doc-card {
+	padding: 24rpx;
+	border-radius: 16rpx;
+	background: #ffffff;
+}
+
+.doc-title {
+	font-size: 34rpx;
+	font-weight: 700;
+	color: #214f36;
+}
+
+.doc-time {
+	margin-top: 10rpx;
+	margin-bottom: 18rpx;
+	font-size: 24rpx;
+	color: #6b7f70;
+}
+
+.doc-subtitle {
+	margin-top: 18rpx;
+	margin-bottom: 8rpx;
+	font-size: 28rpx;
+	font-weight: 600;
+	color: #214f36;
+}
+
+.doc-paragraph {
+	display: block;
+	font-size: 26rpx;
+	line-height: 1.8;
+	color: #354d3f;
+}
+</style>

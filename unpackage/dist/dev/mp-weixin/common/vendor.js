@@ -7082,7 +7082,7 @@ function isConsoleWritable() {
 function initRuntimeSocketService() {
   const hosts = "192.168.10.8,127.0.0.1";
   const port = "8090";
-  const id = "mp-weixin_U2LuQY";
+  const id = "mp-weixin_i7kJHa";
   const lazy = typeof swan !== "undefined";
   let restoreError = lazy ? () => {
   } : initOnError();
@@ -8073,4 +8073,5 @@ exports.s = s;
 exports.sr = sr;
 exports.t = t;
 exports.unref = unref;
+exports.wx$1 = wx$1;
 //# sourceMappingURL=../../.sourcemap/mp-weixin/common/vendor.js.map

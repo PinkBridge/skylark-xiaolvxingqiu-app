@@ -96,7 +96,7 @@ const ensureUserId = ({ url } = {}) => {
   return resolvingUserIdPromise;
 };
 const getHttpBaseUrl = () => BASE_URL;
-const getCurrentUserId = () => readCachedUserId();
+const ensureCurrentUserId = () => ensureUserId({ url: "" }).then((userId) => userId || readCachedUserId());
 const http = ({ url, method = "GET", data, header = {} }) => {
   return ensureUserId({ url }).then((userId) => new Promise((resolve, reject) => {
     const mergedHeader = buildHeaders({ header, userId });
@@ -119,7 +119,7 @@ const http = ({ url, method = "GET", data, header = {} }) => {
     });
   }));
 };
-exports.getCurrentUserId = getCurrentUserId;
+exports.ensureCurrentUserId = ensureCurrentUserId;
 exports.getHttpBaseUrl = getHttpBaseUrl;
 exports.http = http;
 //# sourceMappingURL=../../.sourcemap/mp-weixin/utils/http.js.map

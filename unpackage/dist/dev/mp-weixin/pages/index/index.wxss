@@ -195,3 +195,32 @@
   color: #8ea096;
   text-align: center;
 }
+.privacy-popup.data-v-1cf27b2a {
+  width: 620rpx;
+  padding: 32rpx 28rpx;
+  background: #fff;
+}
+.privacy-popup-title.data-v-1cf27b2a {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #1f7a44;
+}
+.privacy-popup-desc.data-v-1cf27b2a {
+  margin-top: 18rpx;
+  font-size: 26rpx;
+  line-height: 1.75;
+  color: #4a5f53;
+}
+.privacy-link.data-v-1cf27b2a {
+  color: #33c26d;
+}
+.privacy-popup-actions.data-v-1cf27b2a {
+  margin-top: 24rpx;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16rpx;
+}
+.privacy-action-item.data-v-1cf27b2a {
+  flex: 1;
+}

@@ -77,6 +77,16 @@ const _sfc_main = {
         url: "/pages/mime/version"
       });
     };
+    const goUserAgreement = () => {
+      common_vendor.index.navigateTo({
+        url: "/pages/mime/user-agreement"
+      });
+    };
+    const goPrivacyPolicy = () => {
+      common_vendor.index.navigateTo({
+        url: "/pages/mime/privacy-policy"
+      });
+    };
     const goFeedback = () => {
       common_vendor.index.navigateTo({
         url: "/pages/mime/feedback"
@@ -157,27 +167,49 @@ const _sfc_main = {
         }),
         v: common_vendor.p({
           size: "16",
-          name: "setting-fill",
+          name: "file-text-fill",
           color: iconColor.value
         }),
-        w: common_vendor.o(goVersion),
+        w: common_vendor.o(goUserAgreement),
         x: common_vendor.p({
-          title: "软件版本",
+          title: "用户服务协议",
           clickable: true,
           isLink: true
         }),
         y: common_vendor.p({
           size: "16",
-          name: "question-circle-fill",
+          name: "lock-fill",
           color: iconColor.value
         }),
-        z: common_vendor.o(goFeedback),
+        z: common_vendor.o(goPrivacyPolicy),
         A: common_vendor.p({
-          title: "反馈和建议",
+          title: "隐私政策",
           clickable: true,
           isLink: true
         }),
         B: common_vendor.p({
+          size: "16",
+          name: "setting-fill",
+          color: iconColor.value
+        }),
+        C: common_vendor.o(goVersion),
+        D: common_vendor.p({
+          title: "软件版本",
+          clickable: true,
+          isLink: true
+        }),
+        E: common_vendor.p({
+          size: "16",
+          name: "question-circle-fill",
+          color: iconColor.value
+        }),
+        F: common_vendor.o(goFeedback),
+        G: common_vendor.p({
+          title: "反馈和建议",
+          clickable: true,
+          isLink: true
+        }),
+        H: common_vendor.p({
           height: "3",
           bgColor: bgColor.value
         })

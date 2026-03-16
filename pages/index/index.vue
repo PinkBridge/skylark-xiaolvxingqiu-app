@@ -1,5 +1,26 @@
 <template>
 	<view class="index-page">
+		<up-popup :show="showPrivacyPopup" mode="center" :closeOnClickOverlay="false" :safeAreaInsetBottom="false" :round="12">
+			<view class="privacy-popup">
+				<view class="privacy-popup-title">用户服务协议与隐私政策</view>
+				<view class="privacy-popup-desc">
+					<text>欢迎使用小绿星球。请先阅读并同意</text>
+					<text class="privacy-link" @tap="onOpenUserAgreement">《用户服务协议》</text>
+					<text>和</text>
+					<text class="privacy-link" @tap="onOpenPrivacyPolicy">《隐私政策》</text>
+					<text>，同意后可进入主页面。</text>
+				</view>
+				<view class="privacy-popup-actions">
+					<view class="privacy-action-item">
+						<up-button text="不同意" color="#d5ddd8" shape="circle" @click="onRejectPrivacy"></up-button>
+					</view>
+					<view class="privacy-action-item">
+						<up-button text="同意并进入" color="#33c26d" shape="circle" @click="onAgreePrivacy"></up-button>
+					</view>
+				</view>
+			</view>
+		</up-popup>
+
 		<view class="top-toolbar">
 			<view class="toolbar-spacer"></view>
 			<view class="toolbar-actions">
@@ -78,6 +99,7 @@ import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import { listCareTasks, listGardens, listPlants, recognizePlantByImage, updateUserProfile, uploadImageResource } from '@/api'
 import { readCachedWxProfile, saveWxAuthProfile } from '@/utils/auth'
+import { hasUserPrivacyAccepted, openPrivacyPolicy, openUserAgreement, setUserPrivacyAccepted } from '@/utils/privacy'
 
 const SELECTED_GARDEN_KEY = 'selectedGardenId'
 const SELECTED_PLANT_FILTER_KEY = 'selectedPlantFilter'
@@ -93,8 +115,20 @@ const defaultGardenInfo = {
 
 const gardenCards = ref([])
 const recognizeLoading = ref(false)
+const showPrivacyPopup = ref(false)
 
 const syncWechatProfileIfNeeded = (nextAction) => {
+	// #ifdef MP-WEIXIN
+	proceedWechatAuth(nextAction)
+	return
+	// #endif
+
+	// #ifndef MP-WEIXIN
+	nextAction()
+	// #endif
+}
+
+const proceedWechatAuth = (nextAction) => {
 	// #ifdef MP-WEIXIN
 	const cached = readCachedWxProfile()
 	if (cached?.name && cached?.avatar) {
@@ -127,10 +161,6 @@ const syncWechatProfileIfNeeded = (nextAction) => {
 		}
 	})
 	return
-	// #endif
-
-	// #ifndef MP-WEIXIN
-	nextAction()
 	// #endif
 }
 
@@ -208,6 +238,7 @@ const gotoMinePage = () => {
 }
 
 const onGoMine = () => {
+	if (showPrivacyPopup.value) return
 	syncWechatProfileIfNeeded(gotoMinePage)
 }
 
@@ -257,12 +288,26 @@ const startRecognize = () => {
 					uni.showLoading({
 						title: '识别中...'
 					})
-					Promise.all([
-						recognizePlantByImage({ filePath }),
-						uploadImageResource({ filePath, fileName: 'recognize.jpg' })
-					])
-						.then(([result, uploadedPath]) => {
-							gotoRecognizeResult({ filePath: uploadedPath || filePath, result })
+					recognizePlantByImage({ filePath })
+						.then((result) => {
+							gotoRecognizeResult({ filePath, result })
+							// Upload original image in background to avoid blocking recognition page rendering.
+							uploadImageResource({ filePath, fileName: 'recognize.jpg' })
+								.then((uploadedPath) => {
+									const raw = uni.getStorageSync(AI_RESULT_STORAGE_KEY)
+									const payload = raw && typeof raw === 'object' ? { ...raw } : {}
+									const currentRecognized = `${payload?.recognizedImageUrl || ''}`.trim()
+									if (currentRecognized && currentRecognized !== filePath) return
+									const safeUploaded = `${uploadedPath || ''}`.trim()
+									if (!safeUploaded) return
+									const mergedImages = [safeUploaded, `${payload?.imageUrl || ''}`.trim()]
+										.filter((item, index, arr) => item && arr.indexOf(item) === index)
+									payload.recognizedImageUrl = safeUploaded
+									payload.images = mergedImages
+									uni.setStorageSync(AI_RESULT_STORAGE_KEY, payload)
+									uni.$emit('ai:recognized-image-updated', safeUploaded)
+								})
+								.catch(() => {})
 						})
 						.catch((err) => {
 							uni.showToast({
@@ -281,7 +326,29 @@ const startRecognize = () => {
 }
 
 const onRecognize = () => {
+	if (showPrivacyPopup.value) return
 	syncWechatProfileIfNeeded(startRecognize)
+}
+
+const onOpenUserAgreement = () => {
+	openUserAgreement()
+}
+
+const onOpenPrivacyPolicy = () => {
+	openPrivacyPolicy()
+}
+
+const onRejectPrivacy = () => {
+	uni.showToast({
+		title: '需同意协议后才能使用',
+		icon: 'none'
+	})
+}
+
+const onAgreePrivacy = () => {
+	setUserPrivacyAccepted(true)
+	showPrivacyPopup.value = false
+	loadGardenInfo()
 }
 
 const loadCountsByGarden = () => {
@@ -343,6 +410,11 @@ const loadGardenInfo = () => {
 }
 
 onShow(() => {
+	if (!hasUserPrivacyAccepted()) {
+		showPrivacyPopup.value = true
+		return
+	}
+	showPrivacyPopup.value = false
 	loadGardenInfo()
 })
 
@@ -573,6 +645,41 @@ const onFooterAction = (item) => {
 		font-size: 24rpx;
 		color: #8ea096;
 		text-align: center;
+	}
+
+	.privacy-popup {
+		width: 620rpx;
+		padding: 32rpx 28rpx;
+		background: #fff;
+	}
+
+	.privacy-popup-title {
+		font-size: 32rpx;
+		font-weight: 700;
+		color: #1f7a44;
+	}
+
+	.privacy-popup-desc {
+		margin-top: 18rpx;
+		font-size: 26rpx;
+		line-height: 1.75;
+		color: #4a5f53;
+	}
+
+	.privacy-link {
+		color: #33c26d;
+	}
+
+	.privacy-popup-actions {
+		margin-top: 24rpx;
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		gap: 16rpx;
+	}
+
+	.privacy-action-item {
+		flex: 1;
 	}
 
 </style>

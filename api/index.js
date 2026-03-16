@@ -1,4 +1,4 @@
-import { getCurrentUserId, getHttpBaseUrl, http } from '@/utils/http'
+import { ensureCurrentUserId, getCurrentUserId, getHttpBaseUrl, http } from '@/utils/http'
 
 const BIZ_PREFIX = '/api/xiaolvxingqiu'
 const bizUrl = (path) => `${BIZ_PREFIX}${path}`
@@ -110,11 +110,11 @@ const readLocalFileSize = (filePath) => new Promise((resolve) => {
   })
 })
 
-const compressLocalImage = (filePath) => new Promise((resolve) => {
+const compressLocalImage = (filePath, quality = 72) => new Promise((resolve) => {
   // #ifdef MP-WEIXIN
   uni.compressImage({
     src: filePath,
-    quality: 72,
+    quality,
     success: (res) => resolve(`${res?.tempFilePath || filePath}`),
     fail: () => resolve(filePath)
   })
@@ -144,34 +144,39 @@ export const uploadImageResource = ({ filePath, fileName = 'image.jpg' }) => new
       return compressLocalImage(normalizedPath)
     })
     .then((maybeCompressedPath) => {
-  const userId = getCurrentUserId()
-  const header = userId ? { 'X-User-Id': userId } : {}
-  if (getHttpBaseUrl().indexOf('ngrok-free.dev') >= 0) {
-    header['ngrok-skip-browser-warning'] = 'true'
-  }
-  uni.uploadFile({
-    url: `${getHttpBaseUrl()}${bizUrl('/file/upload-image')}`,
-    filePath: maybeCompressedPath || normalizedPath,
-    name: 'file',
-    formData: { fileName },
-    header,
-    success: (res) => {
-      const payload = parseUploadPayload(res?.data)
-      if (!payload) {
-        reject(new Error('图片上传返回解析失败'))
-        return
-      }
-      const url = `${payload?.data?.url || payload?.data?.signedUrl || ''}`.trim()
-      if (res.statusCode >= 200 && res.statusCode < 300 && payload.code === 0 && url) {
-        resolve(url)
-        return
-      }
-      reject(new Error(payload.message || `上传失败: ${res.statusCode}`))
-    },
-    fail: (err) => {
-      reject(new Error(err?.errMsg || '上传图片失败'))
-    }
-  })
+      ensureCurrentUserId()
+        .then((userId) => {
+          const header = userId ? { 'X-User-Id': userId } : {}
+          if (getHttpBaseUrl().indexOf('ngrok-free.dev') >= 0) {
+            header['ngrok-skip-browser-warning'] = 'true'
+          }
+          uni.uploadFile({
+            url: `${getHttpBaseUrl()}${bizUrl('/file/upload-image')}`,
+            filePath: maybeCompressedPath || normalizedPath,
+            name: 'file',
+            formData: { fileName },
+            header,
+            success: (res) => {
+              const payload = parseUploadPayload(res?.data)
+              if (!payload) {
+                reject(new Error('图片上传返回解析失败'))
+                return
+              }
+              const url = `${payload?.data?.url || payload?.data?.signedUrl || ''}`.trim()
+              if (res.statusCode >= 200 && res.statusCode < 300 && payload.code === 0 && url) {
+                resolve(url)
+                return
+              }
+              reject(new Error(payload.message || `上传失败: ${res.statusCode}`))
+            },
+            fail: (err) => {
+              reject(new Error(err?.errMsg || '上传图片失败'))
+            }
+          })
+        })
+        .catch((err) => {
+          reject(err instanceof Error ? err : new Error('静默登录失败，请稍后重试'))
+        })
     })
     .catch((err) => {
       reject(err instanceof Error ? err : new Error('上传图片失败'))
@@ -184,39 +189,51 @@ export const recognizePlantByImage = ({ filePath, fileName = 'plant.jpg' }) => n
     reject(new Error('请选择要识别的图片'))
     return
   }
-  const userId = getCurrentUserId()
-  const header = userId ? { 'X-User-Id': userId } : {}
-  if (getHttpBaseUrl().indexOf('ngrok-free.dev') >= 0) {
-    header['ngrok-skip-browser-warning'] = 'true'
-  }
-  uni.uploadFile({
-    url: `${getHttpBaseUrl()}${bizUrl('/ai/plant/recognize')}`,
-    filePath: normalizedPath,
-    name: 'file',
-    formData: {
-      fileName
-    },
-    header,
-    success: (res) => {
-      let payload = {}
-      if (typeof res?.data === 'string') {
-        try {
-          payload = JSON.parse(res.data || '{}')
-        } catch (e) {
-          reject(new Error('识别服务返回解析失败'))
-          return
+  Promise.resolve()
+    .then(() => compressLocalImage(normalizedPath, 60))
+    .then((compressedPath) => ensureCurrentUserId().then((userId) => ({ userId, compressedPath })))
+    .then(({ userId, compressedPath }) => {
+      const header = userId ? { 'X-User-Id': userId } : {}
+      if (getHttpBaseUrl().indexOf('ngrok-free.dev') >= 0) {
+        header['ngrok-skip-browser-warning'] = 'true'
+      }
+      uni.uploadFile({
+        url: `${getHttpBaseUrl()}${bizUrl('/ai/plant/recognize')}`,
+        filePath: compressedPath || normalizedPath,
+        name: 'file',
+        formData: {
+          fileName
+        },
+        header,
+        success: (res) => {
+          let payload = {}
+          if (typeof res?.data === 'string') {
+            const raw = res.data || ''
+            if (raw.indexOf('ERR_NGROK_6024') >= 0 || raw.indexOf('<!DOCTYPE html>') >= 0) {
+              reject(new Error('当前 ngrok 地址返回了告警页，请稍后重试'))
+              return
+            }
+            try {
+              payload = JSON.parse(raw || '{}')
+            } catch (e) {
+              reject(new Error('识别服务返回解析失败'))
+              return
+            }
+          } else if (res?.data && typeof res.data === 'object') {
+            payload = res.data
+          }
+          if (res.statusCode >= 200 && res.statusCode < 300 && payload.code === 0) {
+            resolve(payload.data)
+            return
+          }
+          reject(new Error(payload.message || `识别失败: ${res.statusCode}`))
+        },
+        fail: (err) => {
+          reject(new Error(err?.errMsg || '上传图片失败'))
         }
-      } else if (res?.data && typeof res.data === 'object') {
-        payload = res.data
-      }
-      if (res.statusCode >= 200 && res.statusCode < 300 && payload.code === 0) {
-        resolve(payload.data)
-        return
-      }
-      reject(new Error(payload.message || `识别失败: ${res.statusCode}`))
-    },
-    fail: (err) => {
-      reject(new Error(err?.errMsg || '上传图片失败'))
-    }
-  })
+      })
+    })
+    .catch((err) => {
+      reject(err instanceof Error ? err : new Error('静默登录失败，请稍后重试'))
+    })
 })

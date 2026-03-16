@@ -24,6 +24,16 @@ const _sfc_main = {
       content: "",
       contact: ""
     });
+    const goUserAgreement = () => {
+      common_vendor.index.navigateTo({
+        url: "/pages/mime/user-agreement"
+      });
+    };
+    const goPrivacyPolicy = () => {
+      common_vendor.index.navigateTo({
+        url: "/pages/mime/privacy-policy"
+      });
+    };
     const submitFeedback = () => {
       if (!form.content.trim()) {
         common_vendor.index.showToast({
@@ -83,8 +93,10 @@ const _sfc_main = {
           labelPosition: "top",
           labelWidth: "220rpx"
         }),
-        h: common_vendor.o(submitFeedback),
-        i: common_vendor.p({
+        h: common_vendor.o(goUserAgreement),
+        i: common_vendor.o(goPrivacyPolicy),
+        j: common_vendor.o(submitFeedback),
+        k: common_vendor.p({
           type: "primary",
           text: "提交反馈",
           color: "#33c26d",

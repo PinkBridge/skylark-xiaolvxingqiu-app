@@ -113,6 +113,9 @@ export const getHttpBaseUrl = () => BASE_URL
 
 export const getCurrentUserId = () => readCachedUserId()
 
+export const ensureCurrentUserId = () =>
+  ensureUserId({ url: '' }).then((userId) => userId || readCachedUserId())
+
 export const http = ({ url, method = 'GET', data, header = {} }) => {
   return ensureUserId({ url }).then((userId) => new Promise((resolve, reject) => {
     const mergedHeader = buildHeaders({ header, userId })

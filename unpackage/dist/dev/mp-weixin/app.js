@@ -19,6 +19,8 @@ if (!Math) {
   "./pages/mime/version.js";
   "./pages/mime/feedback.js";
   "./pages/mime/favorites.js";
+  "./pages/mime/user-agreement.js";
+  "./pages/mime/privacy-policy.js";
   "./pages/ai/ai.js";
 }
 const _sfc_main = {

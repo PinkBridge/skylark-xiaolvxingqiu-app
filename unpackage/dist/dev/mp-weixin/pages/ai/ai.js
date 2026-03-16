@@ -2,6 +2,8 @@
 const common_vendor = require("../../common/vendor.js");
 const api_index = require("../../api/index.js");
 const AI_RESULT_STORAGE_KEY = "aiRecognizeResult";
+const officialIconUrl = "/static/icon/flower-selected.png";
+const officialAccountOriginalId = "gh_3341cd93a42e";
 const _sfc_main = {
   __name: "ai",
   setup(__props) {
@@ -10,6 +12,7 @@ const _sfc_main = {
     const score = common_vendor.ref(0);
     const imageUrl = common_vendor.ref("");
     const recognizedImageUrl = common_vendor.ref("");
+    const showOfficialAccountCard = common_vendor.ref(false);
     const collecting = common_vendor.ref(false);
     const addingGarden = common_vendor.ref(false);
     const images = common_vendor.ref([
@@ -87,6 +90,20 @@ const _sfc_main = {
     common_vendor.onShow(() => {
       loadResult();
     });
+    const onRecognizedImageUpdated = (uploadedUrl) => {
+      const url = `${uploadedUrl || ""}`.trim();
+      if (!url)
+        return;
+      recognizedImageUrl.value = url;
+      const merged = [recognizedImageUrl.value, imageUrl.value].map((item) => `${item || ""}`.trim()).filter((item, index, arr) => item && arr.indexOf(item) === index);
+      if (merged.length) {
+        images.value = merged;
+      }
+    };
+    common_vendor.index.$on("ai:recognized-image-updated", onRecognizedImageUpdated);
+    common_vendor.onUnload(() => {
+      common_vendor.index.$off("ai:recognized-image-updated", onRecognizedImageUpdated);
+    });
     const onCollect = () => {
       if (collecting.value)
         return;
@@ -148,8 +165,28 @@ const _sfc_main = {
         addingGarden.value = false;
       });
     };
+    const onOpenOfficialAccount = () => {
+      const revealOfficialCard = () => {
+        showOfficialAccountCard.value = true;
+        common_vendor.index.showToast({
+          title: "请在下方卡片中点击关注",
+          icon: "none"
+        });
+      };
+      if (typeof common_vendor.wx$1 !== "undefined" && typeof common_vendor.wx$1.openOfficialAccountProfile === "function" && /^gh_[0-9a-zA-Z]+$/.test(officialAccountOriginalId)) {
+        common_vendor.wx$1.openOfficialAccountProfile({
+          username: officialAccountOriginalId,
+          fail: () => {
+            revealOfficialCard();
+          }
+        });
+        return;
+      }
+      revealOfficialCard();
+      return;
+    };
     return (_ctx, _cache) => {
-      return {
+      return common_vendor.e({
         a: common_vendor.t(plantName.value),
         b: common_vendor.f(images.value, (img, idx, i0) => {
           return {
@@ -157,10 +194,14 @@ const _sfc_main = {
             b: idx
           };
         }),
-        c: common_vendor.t(description.value),
-        d: common_vendor.o(onCollect),
-        e: common_vendor.o(onAddGarden)
-      };
+        c: officialIconUrl,
+        d: common_vendor.o(onOpenOfficialAccount),
+        e: showOfficialAccountCard.value
+      }, showOfficialAccountCard.value ? {} : {}, {
+        f: common_vendor.t(description.value),
+        g: common_vendor.o(onCollect),
+        h: common_vendor.o(onAddGarden)
+      });
     };
   }
 };

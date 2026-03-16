@@ -512,15 +512,6 @@ const _sfc_main = {
         savingCarePlan.value = false;
       });
     };
-    const onShareToMoments = () => {
-      common_vendor.index.showShareMenu({
-        menus: ["shareAppMessage", "shareTimeline"]
-      });
-      common_vendor.index.showToast({
-        title: "请点击右上角分享到朋友圈",
-        icon: "none"
-      });
-    };
     const onToggleFocus = () => {
       if (currentPlant.value.focused) {
         common_vendor.index.showModal({
@@ -854,31 +845,24 @@ const _sfc_main = {
               space: "10rpx"
             }),
             d: common_vendor.t(toDaysAgoText(photo.date)),
-            e: "b13b633e-11-" + i0 + "," + ("b13b633e-9-" + i0),
-            f: common_vendor.o(($event) => onShareToMoments(), photo.id),
-            g: photo.id,
-            h: "b13b633e-9-" + i0
+            e: photo.id,
+            f: "b13b633e-9-" + i0
           };
         }),
         D: common_vendor.p({
-          name: "share-fill",
-          size: "16",
-          color: "#33c26d"
-        }),
-        E: common_vendor.p({
           showHead: false,
           showFoot: false,
           border: false,
           margin: "0"
         }),
-        F: !photoRecords.value.length && !albumRecordLoading.value
+        E: !photoRecords.value.length && !albumRecordLoading.value
       }, !photoRecords.value.length && !albumRecordLoading.value ? {} : {}, {
-        G: albumRecordLoading.value
+        F: albumRecordLoading.value
       }, albumRecordLoading.value ? {} : photoRecords.value.length && !albumRecordHasMore.value ? {} : {}, {
-        H: photoRecords.value.length && !albumRecordHasMore.value
+        G: photoRecords.value.length && !albumRecordHasMore.value
       }) : activeTabIndex.value === 2 ? common_vendor.e({
-        J: common_vendor.o(($event) => carePlanConfig.seasonalMode = $event),
-        K: common_vendor.p({
+        I: common_vendor.o(($event) => carePlanConfig.seasonalMode = $event),
+        J: common_vendor.p({
           disabled: !carePlanConfig.enabled,
           activeValue: true,
           inactiveValue: false,
@@ -886,17 +870,17 @@ const _sfc_main = {
           activeColor: "#33c26d",
           modelValue: carePlanConfig.seasonalMode
         }),
-        L: common_vendor.p({
+        K: common_vendor.p({
           name: "checkmark",
           size: "14",
           color: "#33c26d"
         }),
-        M: common_vendor.t(savingCarePlan.value ? "保存中" : "保存计划"),
-        N: common_vendor.o(onSaveCarePlan),
-        O: carePlanConfig.enabled && carePlanConfig.seasonalMode
+        L: common_vendor.t(savingCarePlan.value ? "保存中" : "保存计划"),
+        M: common_vendor.o(onSaveCarePlan),
+        N: carePlanConfig.enabled && carePlanConfig.seasonalMode
       }, carePlanConfig.enabled && carePlanConfig.seasonalMode ? {
-        P: common_vendor.o(onSeasonTabChange),
-        Q: common_vendor.p({
+        O: common_vendor.o(onSeasonTabChange),
+        P: common_vendor.p({
           list: common_vendor.unref(seasonTabList),
           current: activeSeasonIndex.value,
           mode: "button",
@@ -905,18 +889,18 @@ const _sfc_main = {
           bgColor: "#eefbf3"
         })
       } : {}, {
-        R: carePlanConfig.enabled
+        Q: carePlanConfig.enabled
       }, carePlanConfig.enabled ? {
-        S: common_vendor.f(careTaskOptions, (task, k0, i0) => {
+        R: common_vendor.f(careTaskOptions, (task, k0, i0) => {
           return {
-            a: "b13b633e-16-" + i0 + ",b13b633e-12",
+            a: "b13b633e-15-" + i0 + ",b13b633e-11",
             b: common_vendor.p({
               name: task.icon,
               size: "16",
               color: "#33c26d"
             }),
             c: common_vendor.t(task.label),
-            d: "b13b633e-17-" + i0 + ",b13b633e-12",
+            d: "b13b633e-16-" + i0 + ",b13b633e-11",
             e: common_vendor.o(($event) => currentTaskPlanMap.value[task.key].intervalDays = $event, task.key),
             f: common_vendor.p({
               type: "number",
@@ -927,7 +911,7 @@ const _sfc_main = {
               modelValue: currentTaskPlanMap.value[task.key].intervalDays
             }),
             g: !currentTaskPlanMap.value[task.key].enabled ? 1 : "",
-            h: "b13b633e-18-" + i0 + ",b13b633e-12",
+            h: "b13b633e-17-" + i0 + ",b13b633e-11",
             i: common_vendor.o(($event) => currentTaskPlanMap.value[task.key].enabled = $event, task.key),
             j: common_vendor.p({
               activeValue: true,
@@ -940,21 +924,21 @@ const _sfc_main = {
           };
         })
       } : {}, {
-        T: carePlanConfig.enabled && carePlanConfig.seasonalMode
+        S: carePlanConfig.enabled && carePlanConfig.seasonalMode
       }, carePlanConfig.enabled && carePlanConfig.seasonalMode ? {} : {}, {
-        U: common_vendor.p({
+        T: common_vendor.p({
           showHead: false,
           showFoot: false,
           border: false,
           margin: "0"
         })
       }) : common_vendor.e({
-        V: common_vendor.t(statsSummary.value.totalCareCount),
-        W: common_vendor.t(statsSummary.value.photoCount),
-        X: common_vendor.t(statsSummary.value.waterCount),
-        Y: common_vendor.t(statsSummary.value.lastCareGap),
-        Z: common_vendor.t(statsSummary.value.weekCareCount),
-        aa: common_vendor.f(monthlyStats.value, (item, k0, i0) => {
+        U: common_vendor.t(statsSummary.value.totalCareCount),
+        V: common_vendor.t(statsSummary.value.photoCount),
+        W: common_vendor.t(statsSummary.value.waterCount),
+        X: common_vendor.t(statsSummary.value.lastCareGap),
+        Y: common_vendor.t(statsSummary.value.weekCareCount),
+        Z: common_vendor.f(monthlyStats.value, (item, k0, i0) => {
           return {
             a: common_vendor.t(item.count),
             b: `${Math.max(8, Math.round(item.count / monthlyBarMax.value * 100))}%`,
@@ -962,7 +946,7 @@ const _sfc_main = {
             d: item.month
           };
         }),
-        ab: common_vendor.f(wateringTimeDistribution.value, (item, k0, i0) => {
+        aa: common_vendor.f(wateringTimeDistribution.value, (item, k0, i0) => {
           return {
             a: common_vendor.t(item.label),
             b: common_vendor.t(item.count),
@@ -970,13 +954,13 @@ const _sfc_main = {
             d: item.segment
           };
         }),
-        ac: statsSummary.value.wateringOutsideRecommendedCount > 0
+        ab: statsSummary.value.wateringOutsideRecommendedCount > 0
       }, statsSummary.value.wateringOutsideRecommendedCount > 0 ? {
-        ad: common_vendor.t(statsSummary.value.wateringOutsideRecommendedCount)
+        ac: common_vendor.t(statsSummary.value.wateringOutsideRecommendedCount)
       } : {
-        ae: common_vendor.t(statsSummary.value.wateringTimeTip || "浇水时间分布良好。")
+        ad: common_vendor.t(statsSummary.value.wateringTimeTip || "浇水时间分布良好。")
       }, {
-        af: common_vendor.f(healthStatusDistribution.value, (item, k0, i0) => {
+        ae: common_vendor.f(healthStatusDistribution.value, (item, k0, i0) => {
           return {
             a: common_vendor.t(item.status),
             b: common_vendor.t(item.daysText),
@@ -986,9 +970,9 @@ const _sfc_main = {
             f: item.status
           };
         }),
-        ag: isAlwaysHealthyTimeline.value
+        af: isAlwaysHealthyTimeline.value
       }, isAlwaysHealthyTimeline.value ? {} : {}, {
-        ah: common_vendor.p({
+        ag: common_vendor.p({
           showHead: false,
           showFoot: false,
           border: false,
@@ -996,29 +980,29 @@ const _sfc_main = {
         })
       }), {
         B: activeTabIndex.value === 1,
-        I: activeTabIndex.value === 2,
-        ai: common_vendor.o(($event) => showFocusPopup.value = false),
-        aj: common_vendor.p({
+        H: activeTabIndex.value === 2,
+        ah: common_vendor.o(($event) => showFocusPopup.value = false),
+        ai: common_vendor.p({
           name: "close",
           size: "16",
           color: "#8ea096"
         }),
-        ak: focusForm.photo
+        aj: focusForm.photo
       }, focusForm.photo ? {
-        al: focusForm.photo
+        ak: focusForm.photo
       } : {
-        am: common_vendor.p({
+        al: common_vendor.p({
           name: "camera-fill",
           size: "20",
           color: "#33c26d"
         })
       }, {
-        an: common_vendor.o(onPickFocusPhoto),
-        ao: common_vendor.p({
+        am: common_vendor.o(onPickFocusPhoto),
+        an: common_vendor.p({
           label: "图片"
         }),
-        ap: common_vendor.o(($event) => focusForm.reason = $event),
-        aq: common_vendor.p({
+        ao: common_vendor.o(($event) => focusForm.reason = $event),
+        ap: common_vendor.p({
           placeholder: "请输入备注",
           border: "surround",
           height: "90",
@@ -1026,22 +1010,22 @@ const _sfc_main = {
           count: true,
           modelValue: focusForm.reason
         }),
-        ar: common_vendor.p({
+        aq: common_vendor.p({
           label: "备注"
         }),
-        as: common_vendor.p({
+        ar: common_vendor.p({
           model: focusForm,
           labelPosition: "top"
         }),
-        at: common_vendor.o(onSubmitFocus),
-        av: common_vendor.p({
+        as: common_vendor.o(onSubmitFocus),
+        at: common_vendor.p({
           type: "primary",
           text: "确认关注",
           color: "#33c26d",
           shape: "circle"
         }),
-        aw: common_vendor.o(($event) => showFocusPopup.value = false),
-        ax: common_vendor.p({
+        av: common_vendor.o(($event) => showFocusPopup.value = false),
+        aw: common_vendor.p({
           show: showFocusPopup.value,
           mode: "bottom",
           round: "18"

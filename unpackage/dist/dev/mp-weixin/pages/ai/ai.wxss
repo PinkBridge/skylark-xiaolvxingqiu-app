@@ -38,6 +38,62 @@
 .section + .section.data-v-fdb58938 {
   margin-top: 24rpx;
 }
+.official-section.data-v-fdb58938 {
+  padding-bottom: 8rpx;
+}
+.official-card.data-v-fdb58938 {
+  display: flex;
+  align-items: flex-start;
+  gap: 16rpx;
+  padding: 14rpx;
+  border-radius: 14rpx;
+  background: #f7fcf9;
+  border: 1px solid #e2f1e7;
+}
+.official-icon.data-v-fdb58938 {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1px solid #d7efdf;
+  background: #ffffff;
+}
+.official-content.data-v-fdb58938 {
+  flex: 1;
+  min-width: 0;
+}
+.official-desc.data-v-fdb58938 {
+  display: block;
+  margin-bottom: 8rpx;
+  font-size: 24rpx;
+  color: #5a6b60;
+  line-height: 1.5;
+}
+.official-btn.data-v-fdb58938 {
+  margin-top: 10rpx;
+  height: 68rpx;
+  line-height: 68rpx;
+  border-radius: 999rpx;
+  background: linear-gradient(135deg, #33c26d 0%, #27a95b 100%);
+  color: #ffffff;
+  font-size: 26rpx;
+  font-weight: 600;
+  border: 0;
+}
+.official-account-card.data-v-fdb58938 {
+  margin-top: 12rpx;
+  padding: 10rpx 12rpx;
+  border-radius: 12rpx;
+  background: #ffffff;
+  border: 1px solid #dcefe4;
+}
+.official-account-tip.data-v-fdb58938 {
+  display: block;
+  margin-top: 8rpx;
+  font-size: 20rpx;
+  line-height: 1.4;
+  color: #8ba198;
+}
 .section-title.data-v-fdb58938 {
   display: block;
   font-size: 24rpx;

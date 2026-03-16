@@ -368,16 +368,6 @@
   justify-content: flex-start;
   gap: 8rpx;
 }
-.album-share-btn.data-v-b13b633e {
-  width: 46rpx;
-  height: 46rpx;
-  border-radius: 999rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #eefbf3;
-  border: 1px solid #d7efdf;
-}
 .album-media-wrap.data-v-b13b633e {
   display: inline-block;
   max-width: 100%;

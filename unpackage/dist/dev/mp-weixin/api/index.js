@@ -92,10 +92,10 @@ const readLocalFileSize = (filePath) => new Promise((resolve) => {
     fail: () => resolve(0)
   });
 });
-const compressLocalImage = (filePath) => new Promise((resolve) => {
+const compressLocalImage = (filePath, quality = 72) => new Promise((resolve) => {
   common_vendor.index.compressImage({
     src: filePath,
-    quality: 72,
+    quality,
     success: (res) => resolve(`${(res == null ? void 0 : res.tempFilePath) || filePath}`),
     fail: () => resolve(filePath)
   });
@@ -117,34 +117,37 @@ const uploadImageResource = ({ filePath, fileName = "image.jpg" }) => new Promis
     }
     return compressLocalImage(normalizedPath);
   }).then((maybeCompressedPath) => {
-    const userId = utils_http.getCurrentUserId();
-    const header = userId ? { "X-User-Id": userId } : {};
-    if (utils_http.getHttpBaseUrl().indexOf("ngrok-free.dev") >= 0) {
-      header["ngrok-skip-browser-warning"] = "true";
-    }
-    common_vendor.index.uploadFile({
-      url: `${utils_http.getHttpBaseUrl()}${bizUrl("/file/upload-image")}`,
-      filePath: maybeCompressedPath || normalizedPath,
-      name: "file",
-      formData: { fileName },
-      header,
-      success: (res) => {
-        var _a, _b;
-        const payload = parseUploadPayload(res == null ? void 0 : res.data);
-        if (!payload) {
-          reject(new Error("图片上传返回解析失败"));
-          return;
-        }
-        const url = `${((_a = payload == null ? void 0 : payload.data) == null ? void 0 : _a.url) || ((_b = payload == null ? void 0 : payload.data) == null ? void 0 : _b.signedUrl) || ""}`.trim();
-        if (res.statusCode >= 200 && res.statusCode < 300 && payload.code === 0 && url) {
-          resolve(url);
-          return;
-        }
-        reject(new Error(payload.message || `上传失败: ${res.statusCode}`));
-      },
-      fail: (err) => {
-        reject(new Error((err == null ? void 0 : err.errMsg) || "上传图片失败"));
+    utils_http.ensureCurrentUserId().then((userId) => {
+      const header = userId ? { "X-User-Id": userId } : {};
+      if (utils_http.getHttpBaseUrl().indexOf("ngrok-free.dev") >= 0) {
+        header["ngrok-skip-browser-warning"] = "true";
       }
+      common_vendor.index.uploadFile({
+        url: `${utils_http.getHttpBaseUrl()}${bizUrl("/file/upload-image")}`,
+        filePath: maybeCompressedPath || normalizedPath,
+        name: "file",
+        formData: { fileName },
+        header,
+        success: (res) => {
+          var _a, _b;
+          const payload = parseUploadPayload(res == null ? void 0 : res.data);
+          if (!payload) {
+            reject(new Error("图片上传返回解析失败"));
+            return;
+          }
+          const url = `${((_a = payload == null ? void 0 : payload.data) == null ? void 0 : _a.url) || ((_b = payload == null ? void 0 : payload.data) == null ? void 0 : _b.signedUrl) || ""}`.trim();
+          if (res.statusCode >= 200 && res.statusCode < 300 && payload.code === 0 && url) {
+            resolve(url);
+            return;
+          }
+          reject(new Error(payload.message || `上传失败: ${res.statusCode}`));
+        },
+        fail: (err) => {
+          reject(new Error((err == null ? void 0 : err.errMsg) || "上传图片失败"));
+        }
+      });
+    }).catch((err) => {
+      reject(err instanceof Error ? err : new Error("静默登录失败，请稍后重试"));
     });
   }).catch((err) => {
     reject(err instanceof Error ? err : new Error("上传图片失败"));
@@ -156,40 +159,48 @@ const recognizePlantByImage = ({ filePath, fileName = "plant.jpg" }) => new Prom
     reject(new Error("请选择要识别的图片"));
     return;
   }
-  const userId = utils_http.getCurrentUserId();
-  const header = userId ? { "X-User-Id": userId } : {};
-  if (utils_http.getHttpBaseUrl().indexOf("ngrok-free.dev") >= 0) {
-    header["ngrok-skip-browser-warning"] = "true";
-  }
-  common_vendor.index.uploadFile({
-    url: `${utils_http.getHttpBaseUrl()}${bizUrl("/ai/plant/recognize")}`,
-    filePath: normalizedPath,
-    name: "file",
-    formData: {
-      fileName
-    },
-    header,
-    success: (res) => {
-      let payload = {};
-      if (typeof (res == null ? void 0 : res.data) === "string") {
-        try {
-          payload = JSON.parse(res.data || "{}");
-        } catch (e) {
-          reject(new Error("识别服务返回解析失败"));
+  Promise.resolve().then(() => compressLocalImage(normalizedPath, 60)).then((compressedPath) => utils_http.ensureCurrentUserId().then((userId) => ({ userId, compressedPath }))).then(({ userId, compressedPath }) => {
+    const header = userId ? { "X-User-Id": userId } : {};
+    if (utils_http.getHttpBaseUrl().indexOf("ngrok-free.dev") >= 0) {
+      header["ngrok-skip-browser-warning"] = "true";
+    }
+    common_vendor.index.uploadFile({
+      url: `${utils_http.getHttpBaseUrl()}${bizUrl("/ai/plant/recognize")}`,
+      filePath: compressedPath || normalizedPath,
+      name: "file",
+      formData: {
+        fileName
+      },
+      header,
+      success: (res) => {
+        let payload = {};
+        if (typeof (res == null ? void 0 : res.data) === "string") {
+          const raw = res.data || "";
+          if (raw.indexOf("ERR_NGROK_6024") >= 0 || raw.indexOf("<!DOCTYPE html>") >= 0) {
+            reject(new Error("当前 ngrok 地址返回了告警页，请稍后重试"));
+            return;
+          }
+          try {
+            payload = JSON.parse(raw || "{}");
+          } catch (e) {
+            reject(new Error("识别服务返回解析失败"));
+            return;
+          }
+        } else if ((res == null ? void 0 : res.data) && typeof res.data === "object") {
+          payload = res.data;
+        }
+        if (res.statusCode >= 200 && res.statusCode < 300 && payload.code === 0) {
+          resolve(payload.data);
           return;
         }
-      } else if ((res == null ? void 0 : res.data) && typeof res.data === "object") {
-        payload = res.data;
+        reject(new Error(payload.message || `识别失败: ${res.statusCode}`));
+      },
+      fail: (err) => {
+        reject(new Error((err == null ? void 0 : err.errMsg) || "上传图片失败"));
       }
-      if (res.statusCode >= 200 && res.statusCode < 300 && payload.code === 0) {
-        resolve(payload.data);
-        return;
-      }
-      reject(new Error(payload.message || `识别失败: ${res.statusCode}`));
-    },
-    fail: (err) => {
-      reject(new Error((err == null ? void 0 : err.errMsg) || "上传图片失败"));
-    }
+    });
+  }).catch((err) => {
+    reject(err instanceof Error ? err : new Error("静默登录失败，请稍后重试"));
   });
 });
 exports.addAiCollectionToGarden = addAiCollectionToGarden;

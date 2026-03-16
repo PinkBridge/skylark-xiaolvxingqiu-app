@@ -1,6 +1,8 @@
 {
   "navigationBarTitleText": "星球空间",
   "usingComponents": {
+    "up-button": "../../uni_modules/uview-plus/components/u-button/u-button",
+    "up-popup": "../../uni_modules/uview-plus/components/u-popup/u-popup",
     "up-icon": "../../uni_modules/uview-plus/components/u-icon/u-icon",
     "up-card": "../../uni_modules/uview-plus/components/u-card/u-card"
   }

@@ -138,9 +138,6 @@
 							></up-album>
 							<view class="album-footer">
 								<text class="album-date album-date-bottom">{{ toDaysAgoText(photo.date) }}</text>
-								<view class="album-share-btn" @tap="onShareToMoments(photo)">
-									<up-icon name="share-fill" size="16" color="#33c26d"></up-icon>
-								</view>
 							</view>
 						</view>
 					</view>
@@ -936,18 +933,6 @@ const onSelectPlanTemplate = () => {
 	})
 }
 
-const onShareToMoments = () => {
-	// #ifdef MP-WEIXIN
-	uni.showShareMenu({
-		menus: ['shareAppMessage', 'shareTimeline']
-	})
-	// #endif
-	uni.showToast({
-		title: '请点击右上角分享到朋友圈',
-		icon: 'none'
-	})
-}
-
 const onToggleFocus = () => {
 	if (currentPlant.value.focused) {
 		uni.showModal({
@@ -1602,17 +1587,6 @@ onLoad((query) => {
 		align-items: center;
 		justify-content: flex-start;
 		gap: 8rpx;
-	}
-
-	.album-share-btn {
-		width: 46rpx;
-		height: 46rpx;
-		border-radius: 999rpx;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: #eefbf3;
-		border: 1px solid #d7efdf;
 	}
 
 	.album-media-wrap {

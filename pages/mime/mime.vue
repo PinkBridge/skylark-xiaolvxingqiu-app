@@ -38,6 +38,16 @@
 					<up-icon size="16" name="info-circle-fill" :color="iconColor"></up-icon>
 				</template>
 			</up-cell>
+			<up-cell title="用户服务协议" clickable isLink @click="goUserAgreement">
+				<template #icon>
+					<up-icon size="16" name="file-text-fill" :color="iconColor"></up-icon>
+				</template>
+			</up-cell>
+			<up-cell title="隐私政策" clickable isLink @click="goPrivacyPolicy">
+				<template #icon>
+					<up-icon size="16" name="lock-fill" :color="iconColor"></up-icon>
+				</template>
+			</up-cell>
 			<up-cell title="软件版本" clickable isLink @click="goVersion">
 				<template #icon>
 					<up-icon size="16" name="setting-fill" :color="iconColor"></up-icon>
@@ -125,6 +135,18 @@
 	const goVersion = () => {
 		uni.navigateTo({
 			url: '/pages/mime/version'
+		})
+	}
+
+	const goUserAgreement = () => {
+		uni.navigateTo({
+			url: '/pages/mime/user-agreement'
+		})
+	}
+
+	const goPrivacyPolicy = () => {
+		uni.navigateTo({
+			url: '/pages/mime/privacy-policy'
 		})
 	}
 

@@ -30,7 +30,7 @@
 
 <script setup>
 	const contactEmail = 'xiaolvxingqiu@163.com'
-	const groupQrUrl = '/static/image/wechat-group-qr.png'
+	const groupQrUrl = 'https://xiaolvxingqiu-1256079722.cos.ap-guangzhou.myqcloud.com/uploads/u10001/20260312/8cd6edc229fb425e938d695fe2c34d0d.png'
 
 	const copyEmail = () => {
 		uni.setClipboardData({

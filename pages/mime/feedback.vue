@@ -32,6 +32,12 @@
 				></up-input>
 			</up-form-item>
 		</up-form>
+		<view class="privacy-note">
+			<text class="privacy-note-text">提交反馈即表示你已阅读并同意</text>
+			<text class="privacy-link" @tap="goUserAgreement">《用户服务协议》</text>
+			<text class="privacy-note-text">和</text>
+			<text class="privacy-link" @tap="goPrivacyPolicy">《隐私政策》</text>
+		</view>
 
 		<view class="submit-wrap">
 			<up-button
@@ -53,6 +59,18 @@ const form = reactive({
 	content: '',
 	contact: ''
 })
+
+const goUserAgreement = () => {
+	uni.navigateTo({
+		url: '/pages/mime/user-agreement'
+	})
+}
+
+const goPrivacyPolicy = () => {
+	uni.navigateTo({
+		url: '/pages/mime/privacy-policy'
+	})
+}
 
 const submitFeedback = () => {
 	if (!form.content.trim()) {
@@ -98,6 +116,23 @@ const submitFeedback = () => {
 
 	.submit-wrap {
 		margin-top: 28rpx;
+	}
+
+	.privacy-note {
+		margin-top: 12rpx;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		font-size: 24rpx;
+		line-height: 1.6;
+	}
+
+	.privacy-note-text {
+		color: #6f8376;
+	}
+
+	.privacy-link {
+		color: #33c26d;
 	}
 
 	.required-label {

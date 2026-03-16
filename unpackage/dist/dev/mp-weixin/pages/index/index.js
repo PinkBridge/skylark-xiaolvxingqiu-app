@@ -2,15 +2,20 @@
 const common_vendor = require("../../common/vendor.js");
 const api_index = require("../../api/index.js");
 const utils_auth = require("../../utils/auth.js");
+const utils_privacy = require("../../utils/privacy.js");
 if (!Array) {
+  const _easycom_up_button2 = common_vendor.resolveComponent("up-button");
+  const _easycom_up_popup2 = common_vendor.resolveComponent("up-popup");
   const _easycom_up_icon2 = common_vendor.resolveComponent("up-icon");
   const _easycom_up_card2 = common_vendor.resolveComponent("up-card");
-  (_easycom_up_icon2 + _easycom_up_card2)();
+  (_easycom_up_button2 + _easycom_up_popup2 + _easycom_up_icon2 + _easycom_up_card2)();
 }
+const _easycom_up_button = () => "../../uni_modules/uview-plus/components/u-button/u-button.js";
+const _easycom_up_popup = () => "../../uni_modules/uview-plus/components/u-popup/u-popup.js";
 const _easycom_up_icon = () => "../../uni_modules/uview-plus/components/u-icon/u-icon.js";
 const _easycom_up_card = () => "../../uni_modules/uview-plus/components/u-card/u-card.js";
 if (!Math) {
-  (_easycom_up_icon + _easycom_up_card)();
+  (_easycom_up_button + _easycom_up_popup + _easycom_up_icon + _easycom_up_card)();
 }
 const SELECTED_GARDEN_KEY = "selectedGardenId";
 const SELECTED_PLANT_FILTER_KEY = "selectedPlantFilter";
@@ -27,7 +32,12 @@ const _sfc_main = {
     };
     const gardenCards = common_vendor.ref([]);
     const recognizeLoading = common_vendor.ref(false);
+    const showPrivacyPopup = common_vendor.ref(false);
     const syncWechatProfileIfNeeded = (nextAction) => {
+      proceedWechatAuth(nextAction);
+      return;
+    };
+    const proceedWechatAuth = (nextAction) => {
       const cached = utils_auth.readCachedWxProfile();
       if ((cached == null ? void 0 : cached.name) && (cached == null ? void 0 : cached.avatar)) {
         nextAction();
@@ -125,6 +135,8 @@ const _sfc_main = {
       });
     };
     const onGoMine = () => {
+      if (showPrivacyPopup.value)
+        return;
       syncWechatProfileIfNeeded(gotoMinePage);
     };
     const gotoRecognizeResult = ({ filePath, result }) => {
@@ -174,11 +186,24 @@ const _sfc_main = {
               common_vendor.index.showLoading({
                 title: "识别中..."
               });
-              Promise.all([
-                api_index.recognizePlantByImage({ filePath }),
-                api_index.uploadImageResource({ filePath, fileName: "recognize.jpg" })
-              ]).then(([result, uploadedPath]) => {
-                gotoRecognizeResult({ filePath: uploadedPath || filePath, result });
+              api_index.recognizePlantByImage({ filePath }).then((result) => {
+                gotoRecognizeResult({ filePath, result });
+                api_index.uploadImageResource({ filePath, fileName: "recognize.jpg" }).then((uploadedPath) => {
+                  const raw = common_vendor.index.getStorageSync(AI_RESULT_STORAGE_KEY);
+                  const payload = raw && typeof raw === "object" ? { ...raw } : {};
+                  const currentRecognized = `${(payload == null ? void 0 : payload.recognizedImageUrl) || ""}`.trim();
+                  if (currentRecognized && currentRecognized !== filePath)
+                    return;
+                  const safeUploaded = `${uploadedPath || ""}`.trim();
+                  if (!safeUploaded)
+                    return;
+                  const mergedImages = [safeUploaded, `${(payload == null ? void 0 : payload.imageUrl) || ""}`.trim()].filter((item, index, arr) => item && arr.indexOf(item) === index);
+                  payload.recognizedImageUrl = safeUploaded;
+                  payload.images = mergedImages;
+                  common_vendor.index.setStorageSync(AI_RESULT_STORAGE_KEY, payload);
+                  common_vendor.index.$emit("ai:recognized-image-updated", safeUploaded);
+                }).catch(() => {
+                });
               }).catch((err) => {
                 common_vendor.index.showToast({
                   title: (err == null ? void 0 : err.message) || "识别失败，请稍后再试",
@@ -194,7 +219,26 @@ const _sfc_main = {
       });
     };
     const onRecognize = () => {
+      if (showPrivacyPopup.value)
+        return;
       syncWechatProfileIfNeeded(startRecognize);
+    };
+    const onOpenUserAgreement = () => {
+      utils_privacy.openUserAgreement();
+    };
+    const onOpenPrivacyPolicy = () => {
+      utils_privacy.openPrivacyPolicy();
+    };
+    const onRejectPrivacy = () => {
+      common_vendor.index.showToast({
+        title: "需同意协议后才能使用",
+        icon: "none"
+      });
+    };
+    const onAgreePrivacy = () => {
+      utils_privacy.setUserPrivacyAccepted(true);
+      showPrivacyPopup.value = false;
+      loadGardenInfo();
     };
     const loadCountsByGarden = () => {
       if (!gardenCards.value.length)
@@ -254,6 +298,11 @@ const _sfc_main = {
       });
     };
     common_vendor.onShow(() => {
+      if (!utils_privacy.hasUserPrivacyAccepted()) {
+        showPrivacyPopup.value = true;
+        return;
+      }
+      showPrivacyPopup.value = false;
       loadGardenInfo();
     });
     const onFooterAction = (item) => {
@@ -288,69 +337,90 @@ const _sfc_main = {
     };
     return (_ctx, _cache) => {
       return common_vendor.e({
-        a: common_vendor.p({
+        a: common_vendor.o(onOpenUserAgreement),
+        b: common_vendor.o(onOpenPrivacyPolicy),
+        c: common_vendor.o(onRejectPrivacy),
+        d: common_vendor.p({
+          text: "不同意",
+          color: "#d5ddd8",
+          shape: "circle"
+        }),
+        e: common_vendor.o(onAgreePrivacy),
+        f: common_vendor.p({
+          text: "同意并进入",
+          color: "#33c26d",
+          shape: "circle"
+        }),
+        g: common_vendor.p({
+          show: showPrivacyPopup.value,
+          mode: "center",
+          closeOnClickOverlay: false,
+          safeAreaInsetBottom: false,
+          round: 12
+        }),
+        h: common_vendor.p({
           name: "account-fill",
           size: "16",
           color: "#2f8f56"
         }),
-        b: common_vendor.o(onGoMine),
-        c: common_vendor.p({
+        i: common_vendor.o(onGoMine),
+        j: common_vendor.p({
           name: "plus",
           size: "16",
           color: "#2f8f56"
         }),
-        d: common_vendor.o(onAddGarden),
-        e: common_vendor.p({
+        k: common_vendor.o(onAddGarden),
+        l: common_vendor.p({
           name: "camera-fill",
           size: "18",
           color: "#ffffff"
         }),
-        f: common_vendor.t(recognizeLoading.value ? "识别中..." : "AI识别"),
-        g: recognizeLoading.value ? 1 : "",
-        h: common_vendor.o(onRecognize),
-        i: gardenCards.value.length
+        m: common_vendor.t(recognizeLoading.value ? "识别中..." : "AI识别"),
+        n: recognizeLoading.value ? 1 : "",
+        o: common_vendor.o(onRecognize),
+        p: gardenCards.value.length
       }, gardenCards.value.length ? {
-        j: common_vendor.f(gardenCards.value, (garden, k0, i0) => {
+        q: common_vendor.f(gardenCards.value, (garden, k0, i0) => {
           return common_vendor.e({
             a: garden.thumb,
             b: common_vendor.t(garden.title),
             c: garden.isDefault
           }, garden.isDefault ? {} : {}, {
-            d: "1cf27b2a-4-" + i0 + "," + ("1cf27b2a-3-" + i0),
+            d: "1cf27b2a-7-" + i0 + "," + ("1cf27b2a-6-" + i0),
             e: common_vendor.o(onEditGardenInfo, garden.id),
             f: common_vendor.t(garden.subTitle),
             g: garden.image,
             h: common_vendor.t(garden.description),
             i: common_vendor.f(createFooterStats(garden), (item, k1, i1) => {
               return {
-                a: "1cf27b2a-5-" + i0 + "-" + i1 + "," + ("1cf27b2a-3-" + i0),
+                a: "1cf27b2a-8-" + i0 + "-" + i1 + "," + ("1cf27b2a-6-" + i0),
                 b: common_vendor.p({
                   name: item.icon,
                   size: "16",
                   color: item.color
                 }),
                 c: common_vendor.t(item.label),
-                d: "1cf27b2a-6-" + i0 + "-" + i1 + "," + ("1cf27b2a-3-" + i0),
+                d: "1cf27b2a-9-" + i0 + "-" + i1 + "," + ("1cf27b2a-6-" + i0),
                 e: item.key,
                 f: common_vendor.o(($event) => onFooterAction(item), item.key)
               };
             }),
             j: garden.id,
             k: common_vendor.o(($event) => onCardClick(garden), garden.id),
-            l: "1cf27b2a-3-" + i0
+            l: "1cf27b2a-6-" + i0
           });
         }),
-        k: common_vendor.p({
+        r: common_vendor.p({
           name: "edit-pen",
           size: "16",
           color: "#33c26d"
         }),
-        l: common_vendor.p({
+        s: common_vendor.p({
           name: "arrow-right",
           size: "12",
           color: "#7bc59a"
         }),
-        m: common_vendor.p({
+        t: common_vendor.p({
           showHead: false,
           showFoot: false,
           border: false,
